@@ -1,0 +1,19 @@
+[
+  {
+    "id": "d-product",
+    "name": "開発・実装",
+    "positions": [
+      { "id": "p-fe", "name": "フロントエンド", "count": 0 },
+      { "id": "p-be", "name": "バックエンド / API", "count": 0 },
+      { "id": "p-design", "name": "デザイン / UX", "count": 0 }
+    ]
+  },
+  {
+    "id": "d-biz",
+    "name": "企画・運用",
+    "positions": [
+      { "id": "p-pm", "name": "プロダクト / 企画", "count": 0 },
+      { "id": "p-sales", "name": "顧客対応", "count": 0 }
+    ]
+  }
+]

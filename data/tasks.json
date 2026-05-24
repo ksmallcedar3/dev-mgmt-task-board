@@ -1,0 +1,53 @@
+[
+  {
+    "id": "t1",
+    "categoryId": "p-fe",
+    "title": "品質向上：レビュー観点の整理",
+    "status": "in_progress",
+    "nextAction": "Button の variant 表をレビューに出す",
+    "notes": [
+      "2026-05-01 キックオフ済み",
+      "Storybook の見出しだけ先行公開した"
+    ]
+  },
+  {
+    "id": "t2",
+    "categoryId": "p-fe",
+    "title": "アクセシビリティ検証リストの更新",
+    "status": "todo",
+    "nextAction": "WCAG 2.2 の該当項目をチームで分解する",
+    "notes": []
+  },
+  {
+    "id": "t3",
+    "categoryId": "p-fe",
+    "title": "リリースノート用スクショ撮り",
+    "status": "blocked",
+    "nextAction": "ステージングへのデプロイ待ち（インフラへ確認）",
+    "notes": ["ステージング URL がまだ発行されていない"]
+  },
+  {
+    "id": "t4",
+    "categoryId": "p-be",
+    "title": "請求ジョブのリトライ設計メモ",
+    "status": "in_progress",
+    "nextAction": "既存の失敗ログを 1 週間分サンプリングする",
+    "notes": ["過去インシデントは runbook にリンク済み"]
+  },
+  {
+    "id": "t5",
+    "categoryId": "p-be",
+    "title": "API レート制限の閾値調整",
+    "status": "done",
+    "nextAction": "",
+    "notes": ["2026-05-08 本番反映済み", "モニタリングはダッシュボード D を見る"]
+  },
+  {
+    "id": "t6",
+    "categoryId": "p-design",
+    "title": "オンボーディング画面のコピー推敲",
+    "status": "todo",
+    "nextAction": "プロダクトマネージャーと用語をすり合わせる",
+    "notes": []
+  }
+]

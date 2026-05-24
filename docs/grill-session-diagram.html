@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>開発管理課タスク状況管理 — グループセッション用図解</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --muted: #5c6370;
+      --border: #e2e5ea;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --warn: #b45309;
+      --warn-soft: #fffbeb;
+      --ok: #047857;
+      --ok-soft: #ecfdf5;
+      --phase1: #1d4ed8;
+      --phase2: #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding: 2rem 1.25rem 4rem;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; }
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    header .sub {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+    section h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-left: 0.75rem;
+      border-left: 4px solid var(--accent);
+    }
+    section h3 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin: 1.25rem 0 0.5rem;
+      color: var(--muted);
+    }
+    .lead {
+      font-size: 1.05rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 1rem;
+      background: var(--accent-soft);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+    .pain-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+    .pain-card {
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+    }
+    .pain-card strong { display: block; font-size: 1.1rem; margin-bottom: 0.25rem; }
+    .pain-card span { font-size: 0.8rem; color: var(--muted); }
+    .pain-card.priority {
+      border-color: var(--warn);
+      background: var(--warn-soft);
+    }
+    .pain-card.priority strong { color: var(--warn); }
+
+    .phase-flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .phase-box {
+      flex: 1;
+      min-width: 220px;
+      padding: 1.25rem;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+    }
+    .phase-box.now {
+      border-color: var(--phase1);
+      background: var(--accent-soft);
+    }
+    .phase-box.later {
+      border-color: var(--border);
+      background: var(--bg);
+      opacity: 0.95;
+    }
+    .phase-box .label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.35rem;
+    }
+    .phase-box.now .label { color: var(--phase1); }
+    .phase-box.later .label { color: var(--phase2); }
+    .phase-box h3 { margin: 0 0 0.5rem; font-size: 1rem; color: var(--text); }
+    .phase-box p { font-size: 0.85rem; color: var(--muted); }
+    .arrow-between {
+      display: flex;
+      align-items: center;
+      font-size: 1.5rem;
+      color: var(--muted);
+      padding: 0 0.25rem;
+    }
+
+  .panes {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+    @media (max-width: 720px) {
+      .panes { grid-template-columns: 1fr 1fr; }
+    }
+    .pane {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      background: var(--bg);
+    }
+    .pane-num {
+      font-weight: 800;
+      color: var(--accent);
+      font-size: 0.65rem;
+      margin-bottom: 0.35rem;
+    }
+    .pane-title { font-weight: 700; margin-bottom: 0.35rem; }
+    .pane-desc { color: var(--muted); line-height: 1.4; }
+    .flow-user {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem 0.5rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+    }
+    .flow-user .step {
+      padding: 0.4rem 0.75rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .flow-user .chev { color: var(--muted); }
+
+    .themes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+    }
+    .theme {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.6rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+    }
+    th { background: var(--bg); font-weight: 600; }
+    .status-ok { color: var(--ok); }
+    .status-gap { color: var(--warn); font-weight: 600; }
+
+    .pitch {
+      padding: 1.25rem;
+      background: var(--ok-soft);
+      border: 1px solid #a7f3d0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      line-height: 1.75;
+    }
+    .ask {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 2px dashed var(--accent);
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>開発管理課タスク状況管理</h1>
+      <p class="sub">グループセッション用 — グリルで整理した現状の図解</p>
+      <div class="badge-row">
+        <span class="badge">課長視点</span>
+        <span class="badge">Phase 1 進行中</span>
+        <span class="badge">モック（JSON）</span>
+        <span class="badge">明日の成功＝共感</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>1. 何のためのツールか（一言）</h2>
+      <p class="lead">
+        課のタスクを<strong>テーマ別</strong>に整理し、<strong>誰が・何を・いつまで</strong>を見える化する。<br />
+        いちばん先に減らしたいのは<strong>担当が空のタスク（抜け）</strong>。
+      </p>
+    </section>
+
+    <section>
+      <h2>2. いま困っていること（痛み）</h2>
+      <div class="pain-grid">
+        <div class="pain-card priority">
+          <strong>誰が</strong>
+          <span>担当なし・未記載 → 最優先で見たい</span>
+        </div>
+        <div class="pain-card">
+          <strong>何を</strong>
+          <span>1タスク＝1行で追う</span>
+        </div>
+        <div class="pain-card">
+          <strong>いつ</strong>
+          <span>期限は推奨（空でも可）</span>
+        </div>
+        <div class="pain-card">
+          <strong>全体</strong>
+          <span>負荷・抜けの見える化（第2ラウンド）</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. 進め方（2フェーズ）</h2>
+      <div class="phase-flow">
+        <div class="phase-box now">
+          <div class="label">Phase 1 — いま</div>
+          <h3>個人（課長）で型を固める</h3>
+          <p>自分の課の整理に使う。デモと物語を整える。完成品の評価は求めない。</p>
+        </div>
+        <div class="arrow-between" aria-hidden="true">→</div>
+        <div class="phase-box later">
+          <div class="label">Phase 2 — いずれ</div>
+          <h3>課チームで共有</h3>
+          <p>同じ見方で「誰・何・いつ・抜け」を見る。共有の第一歩は未決（セッション後に詰める）。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. 画面の型（4ペイン）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;">
+        左から右へ、テーマ → 一覧 → 状況・次の一手 → 備考
+      </p>
+      <div class="panes">
+        <div class="pane">
+          <div class="pane-num">PANE 1</div>
+          <div class="pane-title">テーマ選択</div>
+          <div class="pane-desc">課の取り組みテーマ（下記）。メンバー名はここにしない。</div>
+        </div>
+        <div class="pane">
+          <div class="pane-num">PANE 2</div>
+          <div class="pane-title">タスク一覧</div>
+          <div class="pane-desc">未着手/進行中/保留/完了。行に担当名＋<strong>未割当バッジ</strong>（目標）。</div>
+        </div>
+        <div class="pane">
+          <div class="pane-num">PANE 3</div>
+          <div class="pane-title">状況＋次の一手</div>
+          <div class="pane-desc">公式の「次にやること」はここだけ。</div>
+        </div>
+        <div class="pane">
+          <div class="pane-num">PANE 4</div>
+          <div class="pane-title">備考のみ</div>
+          <div class="pane-desc">時系列メモ。次の一手は書かない。</div>
+        </div>
+      </div>
+      <div class="flow-user">
+        <span class="step">テーマを選ぶ</span>
+        <span class="chev">→</span>
+        <span class="step">タスクを選ぶ</span>
+        <span class="chev">→</span>
+        <span class="step">状況・次の一手を確認</span>
+        <span class="chev">→</span>
+        <span class="step">備考を追記</span>
+      </div>
+      <h3>Pane 1 のテーマ例（課の重点テーマ）</h3>
+      <div class="themes">
+        <span class="theme">人財育成</span>
+        <span class="theme">生産性向上</span>
+        <span class="theme">品質向上</span>
+        <span class="theme">パートナーマネジメント</span>
+        <span class="theme">新人研修</span>
+        <span class="theme">採用</span>
+        <span class="theme">その他</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. プロトタイプのいまと、グリル後の目標</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>いま（デモ）</th>
+            <th>目標（グリル合意）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ワークスペース名</td>
+            <td class="status-ok">開発管理課タスク状況管理</td>
+            <td class="status-ok">済</td>
+          </tr>
+          <tr>
+            <td>4ペイン・ステータス4値</td>
+            <td class="status-ok">実装済み</td>
+            <td class="status-ok">済</td>
+          </tr>
+          <tr>
+            <td>担当者（個人名）</td>
+            <td class="status-gap">未実装</td>
+            <td>行に表示、空は「未割当」バッジ</td>
+          </tr>
+          <tr>
+            <td>期限</td>
+            <td class="status-gap">未実装</td>
+            <td>推奨（入力促し・空可）</td>
+          </tr>
+          <tr>
+            <td>Pane 1 カテゴリ名</td>
+            <td class="status-gap">開発系サンプル</td>
+            <td>課テーマ名に差し替え</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>6. 今日のセッションで話すこと</h2>
+      <h3>30秒ピッチ（そのまま話せる）</h3>
+      <div class="pitch">
+        私は課長として、課のタスクを<strong>テーマ別</strong>（人財育成・生産性・品質など）に整理し、
+        それぞれについて<strong>誰が・何を・いつまで</strong>やっているかを一目で見たいです。
+        いちばん困っているのは<strong>担当が決まっていない／書かれていないタスク</strong>です。
+        まず自分の中で型を作り、のちにチームで同じ見方を共有したいと考えています。
+      </div>
+      <p class="ask">
+        お願い：完成度の採点より、「課長としてこう見たい、わかる／足りない」の<strong>共感</strong>を聞かせてください
+      </p>
+      <h3>深掘りしないこと（今日は）</h3>
+      <p style="font-size:0.85rem;color:var(--muted);">
+        バックエンド・同時編集・権限 / 「もうチームで使える」約束 / 親子タスク・負荷の自動計算
+      </p>
+    </section>
+
+    <footer>
+      根拠ドキュメント: workspace-ui-kit/docs/grill-product-brief.md · デモ: http://localhost:3000
+    </footer>
+  </div>
+</body>
+</html>
