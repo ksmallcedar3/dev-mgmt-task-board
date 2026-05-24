@@ -1,19 +1,13 @@
 [
   {
-    "id": "d-product",
-    "name": "開発・実装",
+    "id": "d-goals",
+    "name": "年度目標",
     "positions": [
-      { "id": "p-fe", "name": "フロントエンド", "count": 0 },
-      { "id": "p-be", "name": "バックエンド / API", "count": 0 },
-      { "id": "p-design", "name": "デザイン / UX", "count": 0 }
-    ]
-  },
-  {
-    "id": "d-biz",
-    "name": "企画・運用",
-    "positions": [
-      { "id": "p-pm", "name": "プロダクト / 企画", "count": 0 },
-      { "id": "p-sales", "name": "顧客対応", "count": 0 }
+      { "id": "g-quality",  "name": "品質向上",             "count": 0 },
+      { "id": "g-prod",     "name": "生産性向上",           "count": 0 },
+      { "id": "g-talent",   "name": "人財育成",             "count": 0 },
+      { "id": "g-partner",  "name": "パートナーマネジメント", "count": 0 },
+      { "id": "g-onboard",  "name": "新人研修",             "count": 0 }
     ]
   }
 ]

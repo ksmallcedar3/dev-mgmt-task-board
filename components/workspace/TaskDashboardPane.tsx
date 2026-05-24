@@ -24,17 +24,23 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { InlineTextareaField, SectionLabel } from "@/components/primitives";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { CalendarDays, UserRound } from "lucide-react";
 
 type TaskDashboardPaneProps = {
   task: Task | null;
   onUpdateStatus: (status: TaskStatus) => void;
   onUpdateNextAction: (nextAction: string) => void;
+  onUpdateAssignee: (assignee: string) => void;
+  onUpdateDueDate: (dueDate: string) => void;
 };
 
 export function TaskDashboardPane({
   task,
   onUpdateStatus,
   onUpdateNextAction,
+  onUpdateAssignee,
+  onUpdateDueDate,
 }: TaskDashboardPaneProps) {
   if (!task) {
     return (
@@ -56,8 +62,59 @@ export function TaskDashboardPane({
             <h2 className="text-lg font-semibold leading-snug text-foreground">
               {task.title}
             </h2>
-            <p className="text-xs text-muted-foreground">タスクの概要と次の一手</p>
+            {/* 担当者・期日バッジ */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {task.assignee ? (
+                <Badge variant="secondary" className="gap-1 font-normal">
+                  <UserRound className="size-3" />
+                  {task.assignee}
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="gap-1 font-normal">
+                  <UserRound className="size-3" />
+                  未割当
+                </Badge>
+              )}
+              {task.dueDate && (
+                <Badge variant="outline" className="gap-1 font-normal">
+                  <CalendarDays className="size-3" />
+                  {task.dueDate}
+                </Badge>
+              )}
+            </div>
           </div>
+
+          {/* 担当者・期日の編集欄 */}
+          <Card>
+            <CardHeader className="gap-1 pb-3">
+              <CardTitle className="text-base">担当者・期日</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 pt-0">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="task-assignee" className="text-xs text-muted-foreground">
+                  担当者
+                </Label>
+                <InlineTextareaField
+                  ariaLabel="担当者"
+                  value={task.assignee ?? ""}
+                  onSave={onUpdateAssignee}
+                  placeholder="担当者名を入力（空欄 = 未割当）"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="task-due-date" className="text-xs text-muted-foreground">
+                  期日
+                </Label>
+                <input
+                  id="task-due-date"
+                  type="date"
+                  defaultValue={task.dueDate ?? ""}
+                  onBlur={(e) => onUpdateDueDate(e.target.value)}
+                  className="h-8 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader className="gap-1 pb-3">

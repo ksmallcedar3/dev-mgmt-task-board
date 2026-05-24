@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Settings, UserX } from "lucide-react";
 
 import { type Department } from "@/lib/schema";
 import {
@@ -20,6 +20,13 @@ import {
 } from "@/components/ui/tooltip";
 import { SettingsDialogContent } from "@/components/workspace/SettingsDialog";
 
+type Stats = {
+  unassigned: number;
+  inProgress: number;
+  alert: number;
+  done: number;
+};
+
 type GlobalHeaderProps = {
   departmentTitle: string;
   positionTitle: string;
@@ -28,6 +35,7 @@ type GlobalHeaderProps = {
   departments: Department[];
   onAddDepartment: (name: string) => void;
   onDeleteDepartment: (deptId: string) => void;
+  stats: Stats;
 };
 
 export function GlobalHeader({
@@ -37,6 +45,7 @@ export function GlobalHeader({
   departments,
   onAddDepartment,
   onDeleteDepartment,
+  stats,
 }: GlobalHeaderProps) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-3">
@@ -60,6 +69,47 @@ export function GlobalHeader({
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
+
+      {/* サマリ統計バッジ */}
+      <div className="flex shrink-0 items-center gap-3 text-xs">
+        <Tooltip>
+          <TooltipTrigger
+            className={`flex items-center gap-1 font-medium ${stats.unassigned > 0 ? "text-destructive" : "text-muted-foreground"}`}
+          >
+            <UserX className="size-3.5" aria-hidden="true" />
+            <span>{stats.unassigned}</span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">未割当タスク</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger className="flex items-center gap-1 font-medium text-muted-foreground">
+            <Loader2 className="size-3.5" aria-hidden="true" />
+            <span>{stats.inProgress}</span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">進行中タスク</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger
+            className={`flex items-center gap-1 font-medium ${stats.alert > 0 ? "text-amber-600" : "text-muted-foreground"}`}
+          >
+            <AlertCircle className="size-3.5" aria-hidden="true" />
+            <span>{stats.alert}</span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">期日警告（7日以内）</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger className="flex items-center gap-1 font-medium text-muted-foreground">
+            <CheckCircle2 className="size-3.5" aria-hidden="true" />
+            <span>{stats.done}</span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">完了タスク</TooltipContent>
+        </Tooltip>
+
+        <span className="h-4 w-px bg-border" aria-hidden="true" />
+      </div>
 
       <Dialog>
         <Tooltip>

@@ -39,6 +39,10 @@ export const taskSchema = z.object({
   categoryId: z.string(),
   title: z.string(),
   status: taskStatusSchema,
+  /** 担当者名（任意）。空の場合は未割当とみなす */
+  assignee: z.string().optional(),
+  /** 期日。"YYYY-MM-DD" 形式（任意） */
+  dueDate: z.string().optional(),
   /** Pane 3: 公式の「次の一手」 */
   nextAction: z.string(),
   /** Pane 4: 時系列の備考（次の一手は書かない） */
@@ -61,6 +65,10 @@ export type SelectedDetail = { type: "notes" } | null;
 export type TaskRow = {
   id: string;
   title: string;
+  /** 担当者名。空文字 or undefined = 未割当 */
+  assignee?: string;
+  /** 期日。"YYYY-MM-DD" 形式 */
+  dueDate?: string;
 };
 
 export type TaskGroup =

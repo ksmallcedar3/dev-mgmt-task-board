@@ -82,6 +82,23 @@ export function Workspace({
   const departmentTitle = meta?.departmentTitle ?? "";
   const positionTitle = meta?.positionTitle ?? "";
 
+  /** ヘッダーに表示するサマリ統計（全タスク対象） */
+  const stats = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const active = tasks.filter((t) => !t.archived);
+    return {
+      unassigned: active.filter((t) => !t.assignee && t.status !== "done").length,
+      inProgress: active.filter((t) => t.status === "in_progress").length,
+      alert: active.filter((t) => {
+        if (t.status === "done" || !t.dueDate) return false;
+        const days = Math.ceil((new Date(t.dueDate).getTime() - today.getTime()) / 86_400_000);
+        return days <= 7;
+      }).length,
+      done: active.filter((t) => t.status === "done").length,
+    };
+  }, [tasks]);
+
   const tasksInCategory = useMemo(
     () =>
       tasks.filter(
@@ -128,12 +145,12 @@ export function Workspace({
       label: TASK_STATUS_LABELS[status],
       items: byCat
         .filter((t) => t.status === status)
-        .map((t) => ({ id: t.id, title: t.title })),
+        .map((t) => ({ id: t.id, title: t.title, assignee: t.assignee, dueDate: t.dueDate })),
     }));
 
     const archivedItems = tasks
       .filter((t) => t.archived && t.categoryId === selectedCategoryId)
-      .map((t) => ({ id: t.id, title: t.title }));
+      .map((t) => ({ id: t.id, title: t.title, assignee: t.assignee, dueDate: t.dueDate }));
 
     if (archivedItems.length === 0) return stageGroups;
     return [
@@ -272,6 +289,7 @@ export function Workspace({
           departments={departments}
           onAddDepartment={addDepartment}
           onDeleteDepartment={deleteDepartment}
+          stats={stats}
         />
         <div className="flex min-h-0 flex-1">
           <TaskListPane
@@ -291,6 +309,12 @@ export function Workspace({
             }
             onUpdateNextAction={(nextAction) =>
               activeTask && updateTask(activeTask.id, { nextAction })
+            }
+            onUpdateAssignee={(assignee) =>
+              activeTask && updateTask(activeTask.id, { assignee })
+            }
+            onUpdateDueDate={(dueDate) =>
+              activeTask && updateTask(activeTask.id, { dueDate })
             }
           />
           <TaskNotesPane

@@ -8,6 +8,15 @@ import { GripVertical, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type TaskRow, type TaskStatus } from "@/lib/schema";
 import { Button } from "@/components/ui/button";
+
+/** 今日から何日後かを返す。過去は負の値。日付なしは null */
+function daysUntil(dateStr?: string): number | null {
+  if (!dateStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dateStr);
+  return Math.ceil((due.getTime() - today.getTime()) / 86_400_000);
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +90,27 @@ export function SortableTaskRow({
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm">{task.title}</p>
+          {/* 担当者・期日の補助情報 */}
+          <div className="mt-0.5 flex items-center gap-2 text-xs">
+            {/* 担当者 */}
+            {task.assignee ? (
+              <span className="truncate text-muted-foreground">{task.assignee}</span>
+            ) : (
+              <span className="font-medium text-destructive">未割当</span>
+            )}
+            {/* 期日バッジ */}
+            {(() => {
+              const days = daysUntil(task.dueDate);
+              if (days === null) return null;
+              if (days < 0)
+                return <span className="ml-auto shrink-0 font-medium text-destructive">期限超過</span>;
+              if (days <= 7)
+                return <span className="ml-auto shrink-0 font-medium text-destructive">{days}日後</span>;
+              if (days <= 14)
+                return <span className="ml-auto shrink-0 text-amber-600">{days}日後</span>;
+              return <span className="ml-auto shrink-0 text-muted-foreground">{task.dueDate}</span>;
+            })()}
+          </div>
         </div>
       </button>
       <DropdownMenu>
