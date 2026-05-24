@@ -32,14 +32,31 @@ MUST: Next.js のコードを書く前に `node_modules/next/dist/docs/` の該�
 
 ---
 
-## スキル作成ルール
+## 繰り返しとスキル化のルール
 
-このプロジェクトで将来スキルを作成する場合は以下を守る。
+> **同じ作業を 3 回繰り返したらスキル／ルール化する。**
 
-- **作成コマンド**: `create-skill` スキル（`~/.cursor/skills-cursor/create-skill/SKILL.md`）を読んで従う
-- **ファイル名**: `SKILL.md` 固定
+- 3 回目が終わったタイミングで `create-skill` スキル（`~/.cursor/skills-cursor/create-skill/SKILL.md`）を読み、`SKILL.md` を作成する
 - **SSoT 原則**: 模範解答（`docs/mockup-ideal.html`）や既存ドキュメントを見ればわかる内容は SKILL.md 本文に書かない。参照パスだけ示す
 - **内容の洗練**: 決定・制約・判断軸のみを簡潔に書く。手順の逐一説明は不要
+
+---
+
+## Surge デプロイ
+
+HTML 成果物の公開は **プログラム**（スクリプト）が行う。AI は実行するだけ。
+
+```bash
+# モックアップを公開（既定スラッグ: dev-mgmt-task-board-YYYYMMDD）
+./scripts/deploy.sh
+
+# ファイルとスラッグを指定
+./scripts/deploy.sh docs/mockup-ideal.html my-slug-name
+```
+
+- デプロイ履歴: `scripts/deploy-history.log`
+- 削除: `npx surge teardown <domain>.surge.sh`
+- スクリプト: `scripts/deploy.sh`（`deploy-diagram.sh` と同パターン）
 
 ---
 
