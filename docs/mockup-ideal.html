@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>開発管理課タスク状況管理（2026）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif; background-color: #f7f5f0; }
+
+    .header-gradient { background: linear-gradient(135deg, #0d0d1a 0%, #1c1a30 100%); }
+
+    /* タブ */
+    .tab-btn {
+      font-size: 12px; font-weight: 700;
+      padding: 5px 16px; border-radius: 9999px; cursor: pointer;
+      border: 1px solid transparent; transition: all 0.15s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .tab-btn.active { background: #c9a84c; color: #0d0d1a; border-color: #c9a84c; }
+    .tab-btn:not(.active) { background: transparent; color: #a09880; border-color: #2d2850; }
+    .tab-btn:not(.active):hover { border-color: #c9a84c; color: #c9a84c; }
+
+    /* ペインヘッダー */
+    .pane-header { background: #faf8f2; border-bottom: 1px solid #e5e1d8; padding: 10px 14px; }
+    .pane-title { font-size: 13px; font-weight: 700; color: #2d2820; display: flex; align-items: center; gap: 6px; }
+
+    /* ソートトグル */
+    .sort-btn {
+      font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer;
+      border: 1px solid #d5cfc4; background: white; color: #8b7d5e; transition: all 0.1s;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .sort-btn.active { background: #1c1a30; color: #c9a84c; border-color: #1c1a30; }
+
+    /* 年度目標 / 課員 ボタン */
+    .list-btn {
+      width: 100%; text-align: left; padding: 8px 10px; border-radius: 10px; margin-bottom: 4px;
+      border: 1px solid transparent; cursor: pointer; font-size: 12px; color: #4a4540; background: white;
+      display: flex; justify-content: space-between; align-items: center; transition: background 0.1s;
+    }
+    .list-btn:hover { background: #f3f1eb; border-color: #e5e1d8; }
+    .list-btn.active { background: linear-gradient(135deg, #0d0d1a, #1c1a30); color: #e8d9a8; border-color: transparent; }
+    .list-btn.active .list-count { color: #c9a84c; }
+    .list-count { font-size: 11px; color: #a09880; }
+
+    /* 課員アバター */
+    .avatar {
+      width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      background: #2d2850; color: #c9a84c;
+    }
+    .avatar.leader { background: #1a1a38; color: #e8d9a8; }
+    .avatar.external { background: #f3f1eb; color: #8b7d5e; }
+
+    /* タスクカード */
+    .task-card {
+      width: 100%; text-align: left; padding: 8px 10px; border-radius: 10px; margin-bottom: 4px;
+      border: 1px solid #e5e1d8; background: white; cursor: pointer; transition: background 0.1s;
+    }
+    .task-card:hover { background: #f7f5f0; }
+    .task-card.active { background: linear-gradient(135deg, #111125, #1a1a38); border-color: rgba(201,168,76,0.35); }
+    .task-title { font-size: 12px; font-weight: 500; line-height: 1.4; color: #2d2820; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .task-card.active .task-title { color: #e8d9a8; font-weight: 600; }
+    .task-meta { font-size: 10px; color: #8b7d5e; margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+    .task-card.active .task-meta { color: #a09880; }
+
+    /* ステータスバッジ */
+    .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; }
+    .badge-done     { background: #d1f0db; color: #1a5c2e; border: 1px solid #7ecb97; }
+    .badge-progress { background: #fefdf5; color: #713f12; border: 1px solid #e8d09a; }
+    .badge-blocked  { background: #fef7f4; color: #7c2d12; border: 1px solid #f4c5b0; }
+    .badge-todo     { background: #f3f1eb; color: #5a5244; border: 1px solid #d5cfc4; }
+
+    /* サマリボタン */
+    .stat-btn { cursor: pointer; text-align: center; padding: 4px 8px; border-radius: 8px; border: 2px solid transparent; transition: all 0.15s; }
+    .stat-btn:hover { border-color: rgba(201,168,76,0.4); }
+    .stat-btn.stat-active { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
+
+    /* フィルターバー */
+    .filter-bar {
+      background: #1a1a30; border-bottom: 1px solid #2d2850;
+      padding: 5px 14px; display: flex; align-items: center; gap: 8px;
+    }
+
+    /* 期日アラートバッジ */
+    .due-overdue { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 9999px; background: #fef7f4; color: #7c2d12; border: 1px solid #f4c5b0; white-space: nowrap; }
+    .due-soon    { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 9999px; background: #fefdf5; color: #713f12; border: 1px solid #e8d09a; white-space: nowrap; }
+
+    /* Pane 3 */
+    .next-action-box {
+      background: linear-gradient(135deg, #111125, #1a1a38);
+      border: 1px solid rgba(201,168,76,0.25); border-radius: 12px;
+      padding: 14px 16px; color: #e8d9a8; font-size: 13px; line-height: 1.7;
+    }
+    .next-action-empty {
+      border: 1px dashed #d5cfc4; border-radius: 12px; padding: 14px 16px;
+      font-size: 12px; color: #a09880; font-style: italic; background: #faf8f2;
+    }
+    .detail-card { background: #faf8f2; border: 1px solid #e5e1d8; border-radius: 12px; padding: 14px 16px; }
+    .pill-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 9999px; }
+    .pill-assignee  { background: #faf8f2; color: #5a5244; border: 1px solid #d5cfc4; }
+    .pill-unassigned{ background: #fef7f4; color: #7c2d12; border: 1px solid #f4c5b0; }
+    .pill-due       { background: #fefdf5; color: #713f12; border: 1px solid #e8d09a; }
+    .pill-overdue   { background: #fef7f4; color: #7c2d12; border: 1px solid #f4c5b0; }
+
+    /* Pane 4 */
+    .note-item { border-left: 3px solid #c9a84c; padding: 6px 10px; margin-bottom: 10px; background: white; border-radius: 0 8px 8px 0; }
+
+    .pane-scroll { overflow-y: auto; }
+    .group-label { display: flex; align-items: center; gap: 6px; padding: 0 4px; margin-bottom: 6px; }
+    .group-count { font-size: 10px; color: #a09880; }
+  </style>
+</head>
+<body style="height:100vh; display:flex; flex-direction:column;">
+
+<!-- ── ヘッダー ── -->
+<header class="header-gradient text-white flex-shrink-0">
+  <div style="padding:14px 20px; display:flex; align-items:flex-end; justify-content:space-between;">
+    <div>
+      <p style="font-size:10px;font-weight:700;letter-spacing:0.15em;color:#c9a84c;text-transform:uppercase;margin-bottom:4px;">Task Board</p>
+      <h1 style="font-size:22px;font-weight:900;letter-spacing:-0.01em;">開発管理課タスク状況管理（2026）</h1>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+      <!-- タブ -->
+      <div style="display:flex;gap:6px;">
+        <button class="tab-btn active" id="tab-goal" onclick="switchTab('goal')">
+          <i data-lucide="target" style="width:12px;height:12px;"></i>目標ビュー
+        </button>
+        <button class="tab-btn" id="tab-member" onclick="switchTab('member')">
+          <i data-lucide="users" style="width:12px;height:12px;"></i>課員ビュー
+        </button>
+      </div>
+      <!-- サマリ（クリックでフィルター） -->
+      <div style="display:flex;gap:6px;">
+        <button class="stat-btn" id="statbtn-unassigned" onclick="toggleFilter('unassigned')">
+          <div id="stat-unassigned" style="font-size:20px;font-weight:900;color:#f4a488;line-height:1;"></div>
+          <div style="font-size:10px;color:#a09880;margin-top:2px;">未割当</div>
+        </button>
+        <button class="stat-btn" id="statbtn-inprogress" onclick="toggleFilter('inprogress')">
+          <div id="stat-inprogress" style="font-size:20px;font-weight:900;color:#e8d9a8;line-height:1;"></div>
+          <div style="font-size:10px;color:#a09880;margin-top:2px;">進行中</div>
+        </button>
+        <button class="stat-btn" id="statbtn-alert" onclick="toggleFilter('alert')">
+          <div id="stat-alert" style="font-size:20px;font-weight:900;color:#f4a488;line-height:1;"></div>
+          <div style="font-size:10px;color:#a09880;margin-top:2px;">期日警告</div>
+        </button>
+        <button class="stat-btn" id="statbtn-done" onclick="toggleFilter('done')">
+          <div id="stat-done" style="font-size:20px;font-weight:900;color:#7ecb97;line-height:1;"></div>
+          <div style="font-size:10px;color:#a09880;margin-top:2px;">完了</div>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── パンくず ── -->
+<div style="background:#1a1a30;border-bottom:1px solid #2d2850;padding:6px 20px;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+  <span style="font-size:11px;color:#6b6490;">開発管理課タスク状況管理</span>
+  <span style="font-size:11px;color:#3d3a5e;">/</span>
+  <span id="header-breadcrumb" style="font-size:11px;color:#c9a84c;font-weight:600;">—</span>
+</div>
+
+<!-- ── フィルターバー ── -->
+<div class="filter-bar flex-shrink-0" id="filter-bar" style="display:none;">
+  <i data-lucide="filter" style="width:12px;height:12px;color:#c9a84c;flex-shrink:0;"></i>
+  <span id="filter-label" style="font-size:11px;font-weight:700;color:#c9a84c;"></span>
+  <span style="font-size:11px;color:#6b6490;">のタスクを全件表示中</span>
+  <button onclick="clearFilter()" style="margin-left:auto;font-size:10px;color:#a09880;background:transparent;border:1px solid #3d3a5e;border-radius:6px;padding:2px 8px;cursor:pointer;display:flex;align-items:center;gap:4px;">
+    <i data-lucide="x" style="width:10px;height:10px;"></i>クリア
+  </button>
+</div>
+
+<!-- ── 未割当バナー ── -->
+<div id="unassigned-banner" style="background:#fef7f4;border-bottom:1px solid #f4c5b0;padding:7px 20px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+  <i data-lucide="alert-triangle" style="width:14px;height:14px;color:#7c2d12;flex-shrink:0;"></i>
+  <span style="font-size:12px;font-weight:700;color:#7c2d12;" id="banner-text">未割当タスク 0 件</span>
+  <span style="font-size:12px;color:#9a3515;">— 担当者が決まっていないタスクがあります。タスク一覧で確認して割り当ててください。</span>
+</div>
+
+<!-- ── 4ペイン ── -->
+<div style="display:flex;flex:1;overflow:hidden;">
+
+  <!-- Pane 1 -->
+  <div style="width:200px;border-right:1px solid #e5e1d8;background:white;display:flex;flex-direction:column;flex-shrink:0;">
+    <div class="pane-header">
+      <div class="pane-title" id="pane1-title">
+        <i data-lucide="target" style="width:13px;height:13px;color:#8b7d5e;"></i>年度目標
+      </div>
+    </div>
+    <div class="pane-scroll flex-1" style="padding:10px 8px;" id="pane1-list"></div>
+    <div style="padding:8px 12px;border-top:1px solid #e5e1d8;">
+      <p style="font-size:10px;color:#a09880;">Phase 1 — 課長が入力・整理</p>
+    </div>
+  </div>
+
+  <!-- Pane 2 -->
+  <div style="width:248px;border-right:1px solid #e5e1d8;background:white;display:flex;flex-direction:column;flex-shrink:0;">
+    <div class="pane-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="pane-title" id="pane2-title">
+        <i data-lucide="list-checks" style="width:13px;height:13px;color:#8b7d5e;"></i>タスク一覧
+      </div>
+      <div style="display:flex;gap:4px;">
+        <button class="sort-btn active" id="sort-status" onclick="setSort('status')">
+          <i data-lucide="layers" style="width:10px;height:10px;"></i>状況
+        </button>
+        <button class="sort-btn" id="sort-due" onclick="setSort('due')">
+          <i data-lucide="calendar-clock" style="width:10px;height:10px;"></i>期日
+        </button>
+      </div>
+    </div>
+    <div class="pane-scroll flex-1" style="padding:10px 8px;" id="task-list"></div>
+  </div>
+
+  <!-- Pane 3 -->
+  <div style="flex:1;border-right:1px solid #e5e1d8;background:white;display:flex;flex-direction:column;">
+    <div class="pane-header">
+      <div class="pane-title">
+        <i data-lucide="clipboard-check" style="width:13px;height:13px;color:#8b7d5e;"></i>状況・次の一手
+      </div>
+    </div>
+    <div class="pane-scroll flex-1" style="padding:16px 20px;" id="pane3-content"></div>
+  </div>
+
+  <!-- Pane 4 -->
+  <div style="width:272px;background:white;display:flex;flex-direction:column;flex-shrink:0;">
+    <div class="pane-header">
+      <div class="pane-title">
+        <i data-lucide="notebook-text" style="width:13px;height:13px;color:#8b7d5e;"></i>備考（時系列メモ）
+      </div>
+      <p style="font-size:10px;color:#a09880;font-style:italic;margin-top:2px;">次の一手はここに書かない</p>
+    </div>
+    <div class="pane-scroll flex-1" style="padding:10px 12px;" id="pane4-content"></div>
+    <div style="padding:8px 14px;border-top:1px solid #e5e1d8;background:linear-gradient(135deg,#0d0d1a,#1c1a30);">
+      <p style="font-size:10px;color:#6b6490;font-style:italic;display:flex;align-items:center;gap:6px;">
+        <i data-lucide="mic" style="width:11px;height:11px;color:#c9a84c;"></i>
+        将来: 課進捗会議の音声 → 自動反映
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── データ＆ロジック ── -->
+<script>
+// 今日の基準日（モックなので固定）
+const TODAY = new Date('2026-05-24');
+
+const GOALS = [
+  { id: 'g1', label: '品質向上' },
+  { id: 'g2', label: '生産性向上' },
+  { id: 'g3', label: '人財育成' },
+  { id: 'g4', label: 'パートナーマネジメント' },
+  { id: 'g5', label: '新人研修' },
+];
+
+const MEMBERS = [
+  { id: 'm1', name: '小杉',  role: '課長',   type: 'leader' },
+  { id: 'm2', name: '石本',  role: '係長',   type: 'leader' },
+  { id: 'm3', name: '大塚',  role: '課員',   type: 'member' },
+  { id: 'm4', name: '庄治',  role: '課員',   type: 'member' },
+  { id: 'm5', name: '大須賀',role: '課員',   type: 'member' },
+  { id: 'm6', name: '柿本',  role: '課員',   type: 'member' },
+  { id: 'm7', name: '中村知',role: '課長（課外）', type: 'external' },
+  { id: 'm8', name: '平林',  role: '課長（課外）', type: 'external' },
+];
+
+const TASKS = [
+  // 品質向上
+  { id: 't01', goalId: 'g1', title: 'レビュー観点チェックリスト整備',   assignee: '石本',   status: '進行中', dueDate: '2026-06-30', nextAction: 'ドラフトをチームにレビュー依頼する', notes: ['5/20 キックオフ実施済み', '5/23 第一版ドラフト作成'] },
+  { id: 't02', goalId: 'g1', title: 'コードレビュー基準の文書化',         assignee: '',       status: '未着手', dueDate: '2026-07-31', nextAction: '', notes: [] },
+  { id: 't03', goalId: 'g1', title: '自動テストカバレッジ計測',           assignee: '大塚',   status: '保留',   dueDate: '2026-07-15', nextAction: 'テスト基盤の整備完了を待つ', notes: ['インフラ整備待ち（田中さん対応中）'] },
+  { id: 't04', goalId: 'g1', title: '品質指標ダッシュボード作成',         assignee: '庄治',   status: '未着手', dueDate: '2026-08-31', nextAction: '', notes: [] },
+  // 生産性向上
+  { id: 't05', goalId: 'g2', title: 'CI/CDパイプライン改善',             assignee: '大塚',   status: '進行中', dueDate: '2026-05-28', nextAction: 'ステージング環境での動作確認', notes: ['5/18 設計完了', '5/22 実装開始'] },
+  { id: 't06', goalId: 'g2', title: 'ドキュメント管理ツール選定',         assignee: '石本',   status: '未着手', dueDate: '2026-06-10', nextAction: '候補3ツールの比較表を作成する', notes: [] },
+  { id: 't07', goalId: 'g2', title: 'AI活用生産性向上計画の策定',         assignee: '小杉',   status: '進行中', dueDate: '2026-12-31', nextAction: 'BCGとのキックオフ日程を確定する', notes: ['5/15 米倉部長と方向性合意', '5/22 BCG初回打合せ実施'] },
+  { id: 't08', goalId: 'g2', title: '定例作業マニュアル整備',             assignee: '庄治',   status: '進行中', dueDate: '2026-05-30', nextAction: '第2章（デプロイ手順）の草稿を完成させる', notes: [] },
+  // 人財育成
+  { id: 't09', goalId: 'g3', title: '技術勉強会の企画・運営',             assignee: '大須賀', status: '進行中', dueDate: '2026-06-20', nextAction: '6月テーマをメンバーに投票依頼', notes: ['月次開催を目標'] },
+  { id: 't10', goalId: 'g3', title: 'OJT計画書の更新',                   assignee: '',       status: '未着手', dueDate: '2026-05-31', nextAction: '', notes: [] },
+  { id: 't11', goalId: 'g3', title: '中長期人財育成計画の策定',           assignee: '小杉',   status: '進行中', dueDate: '2026-12-31', nextAction: 'デロイト小林さんと次回MTGを設定する', notes: ['デロイトと並走中（継続決定済み）'] },
+  { id: 't12', goalId: 'g3', title: '1on1 面談シートの整備',             assignee: '石本',   status: '未着手', dueDate: '2026-06-15', nextAction: '', notes: [] },
+  // パートナーマネジメント
+  { id: 't13', goalId: 'g4', title: 'ベンダーA 定例アジェンダ整備',       assignee: '庄治',   status: '完了',   dueDate: '2026-05-15', nextAction: '', notes: ['5/15 完了・運用開始'] },
+  { id: 't14', goalId: 'g4', title: 'ガートナー契約更新サポート',         assignee: '平林',   status: '進行中', dueDate: '2026-06-30', nextAction: '決裁書の最終確認を依頼する', notes: ['平林課長が主担当。進捗確認のみ'] },
+  { id: 't15', goalId: 'g4', title: '中長期パートナーレイアウト整備',     assignee: '小杉',   status: '未着手', dueDate: '2026-09-30', nextAction: '', notes: [] },
+  { id: 't16', goalId: 'g4', title: 'ベンダーB リスク評価',               assignee: '中村知', status: '進行中', dueDate: '2026-06-05', nextAction: '評価シートの記入を依頼する', notes: [] },
+  // 新人研修
+  { id: 't17', goalId: 'g5', title: '新人研修資料（環境構築）更新',       assignee: '大須賀', status: '進行中', dueDate: '2026-06-01', nextAction: 'Docker手順を最新版に差し替える', notes: [] },
+  { id: 't18', goalId: 'g5', title: '新人メンター面談シート作成',         assignee: '',       status: '未着手', dueDate: '2026-06-15', nextAction: '', notes: [] },
+  { id: 't19', goalId: 'g5', title: '柿本さんオンボーディング計画',       assignee: '石本',   status: '未着手', dueDate: '2026-05-29', nextAction: '', notes: [] },
+  { id: 't20', goalId: 'g5', title: '研修効果測定アンケート設計',         assignee: '大須賀', status: '未着手', dueDate: '2026-07-31', nextAction: '', notes: [] },
+];
+
+const STATUS_ORDER = ['未着手', '進行中', '保留', '完了'];
+const STATUS_BADGE = { '完了': 'badge-done', '進行中': 'badge-progress', '保留': 'badge-blocked', '未着手': 'badge-todo' };
+
+let currentTab = 'goal';
+let selectedId = 'g1';
+let selectedTaskId = 't01';
+let sortMode = 'status';
+let activeFilter = null; // 'unassigned' | 'inprogress' | 'alert' | 'done' | null
+
+const FILTER_LABELS = {
+  unassigned: '未割当',
+  inprogress: '進行中',
+  alert:      '期日警告（7日以内）',
+  done:       '完了',
+};
+
+function toggleFilter(key) {
+  activeFilter = activeFilter === key ? null : key;
+  // ボタンのアクティブ状態を更新
+  ['unassigned','inprogress','alert','done'].forEach(k => {
+    document.getElementById(`statbtn-${k}`).classList.toggle('stat-active', k === activeFilter);
+  });
+  // フィルターバー表示
+  const bar = document.getElementById('filter-bar');
+  if (activeFilter) {
+    bar.style.display = 'flex';
+    document.getElementById('filter-label').textContent = FILTER_LABELS[activeFilter];
+  } else {
+    bar.style.display = 'none';
+  }
+  renderTasks();
+  lucide.createIcons();
+}
+
+function clearFilter() {
+  activeFilter = null;
+  ['unassigned','inprogress','alert','done'].forEach(k => {
+    document.getElementById(`statbtn-${k}`).classList.remove('stat-active');
+  });
+  document.getElementById('filter-bar').style.display = 'none';
+  renderTasks();
+}
+
+function getFilteredTasks() {
+  if (!activeFilter) return null;
+  switch (activeFilter) {
+    case 'unassigned': return TASKS.filter(t => !t.assignee && t.status !== '完了');
+    case 'inprogress': return TASKS.filter(t => t.status === '進行中');
+    case 'alert':      return TASKS.filter(t => t.status !== '完了' && t.dueDate && daysUntil(t.dueDate) <= 7);
+    case 'done':       return TASKS.filter(t => t.status === '完了');
+  }
+  return null;
+}
+
+// ── 期日ユーティリティ ──────────────────────────────
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return Math.ceil((d - TODAY) / 86400000);
+}
+function dueBadge(dateStr, status) {
+  if (status === '完了') return '';
+  const days = daysUntil(dateStr);
+  if (days === null) return '';
+  if (days < 0)  return `<span class="due-overdue">期限超過</span>`;
+  if (days <= 7) return `<span class="due-overdue">${days}日後</span>`;
+  if (days <= 14) return `<span class="due-soon">${days}日後</span>`;
+  return '';
+}
+function duePillClass(dateStr, status) {
+  if (status === '完了') return 'pill-due';
+  const days = daysUntil(dateStr);
+  if (days === null) return 'pill-due';
+  if (days <= 7) return 'pill-overdue';
+  return 'pill-due';
+}
+
+// ── グローバル集計 ──────────────────────────────────
+function updateStats() {
+  const unassigned = TASKS.filter(t => !t.assignee && t.status !== '完了').length;
+  const inProgress = TASKS.filter(t => t.status === '進行中').length;
+  const done       = TASKS.filter(t => t.status === '完了').length;
+  const alert      = TASKS.filter(t => t.status !== '完了' && t.dueDate && daysUntil(t.dueDate) <= 7).length;
+
+  document.getElementById('stat-unassigned').textContent = unassigned;
+  document.getElementById('stat-inprogress').textContent = inProgress;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-alert').textContent = alert;
+
+  const banner = document.getElementById('unassigned-banner');
+  document.getElementById('banner-text').textContent = `未割当タスク ${unassigned} 件`;
+  banner.style.display = unassigned > 0 ? 'flex' : 'none';
+}
+
+// ── タブ切替 ────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-goal').classList.toggle('active', tab === 'goal');
+  document.getElementById('tab-member').classList.toggle('active', tab === 'member');
+
+  if (tab === 'goal') {
+    selectedId = 'g1';
+    selectedTaskId = TASKS.find(t => t.goalId === 'g1')?.id || '';
+    document.getElementById('pane1-title').innerHTML =
+      `<i data-lucide="target" style="width:13px;height:13px;color:#8b7d5e;"></i>年度目標`;
+  } else {
+    selectedId = 'm1';
+    selectedTaskId = TASKS.find(t => t.assignee === '小杉')?.id || '';
+    document.getElementById('pane1-title').innerHTML =
+      `<i data-lucide="users" style="width:13px;height:13px;color:#8b7d5e;"></i>課員一覧`;
+  }
+  renderAll();
+}
+
+// ── ソート切替 ──────────────────────────────────────
+function setSort(mode) {
+  sortMode = mode;
+  document.getElementById('sort-status').classList.toggle('active', mode === 'status');
+  document.getElementById('sort-due').classList.toggle('active', mode === 'due');
+  renderTasks();
+}
+
+// ── Pane 1 ──────────────────────────────────────────
+function renderPane1() {
+  const el = document.getElementById('pane1-list');
+
+  if (currentTab === 'goal') {
+    el.innerHTML = GOALS.map(g => {
+      const count = TASKS.filter(t => t.goalId === g.id && t.status !== '完了').length;
+      const isActive = g.id === selectedId;
+      return `<button class="list-btn${isActive ? ' active' : ''}" onclick="selectItem('${g.id}')">
+        <span>${g.label}</span>
+        <span class="list-count">${count}</span>
+      </button>`;
+    }).join('');
+  } else {
+    // 課員ビュー
+    const inner = MEMBERS.map(m => {
+      const myTasks = TASKS.filter(t => t.assignee === m.name && t.status !== '完了');
+      if (myTasks.length === 0 && (m.type === 'external')) return ''; // 課外で担当なしは非表示
+      const isActive = m.id === selectedId;
+      const alertCount = myTasks.filter(t => t.dueDate && daysUntil(t.dueDate) <= 7).length;
+      return `<button class="list-btn${isActive ? ' active' : ''}" onclick="selectItem('${m.id}')">
+        <div style="display:flex;align-items:center;gap:7px;min-width:0;">
+          <div class="avatar ${m.type === 'external' ? 'external' : m.type === 'leader' ? 'leader' : ''}">${m.name[0]}</div>
+          <div style="min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:${isActive ? '#e8d9a8' : '#2d2820'};">${m.name}</div>
+            <div style="font-size:10px;color:${isActive ? '#a09880' : '#a09880'};">${m.role}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+          ${alertCount > 0 ? `<span style="font-size:9px;background:#fef7f4;color:#7c2d12;border:1px solid #f4c5b0;border-radius:9999px;padding:1px 5px;font-weight:700;">${alertCount}</span>` : ''}
+          <span class="list-count">${myTasks.length}</span>
+        </div>
+      </button>`;
+    }).filter(Boolean).join('');
+    el.innerHTML = inner;
+  }
+  lucide.createIcons();
+}
+
+// ── Pane 2 ──────────────────────────────────────────
+function renderTasks() {
+  const el = document.getElementById('task-list');
+  const titleEl = document.getElementById('pane2-title');
+
+  // フィルターモード：全タスクから絞り込み
+  const filtered = getFilteredTasks();
+  if (filtered) {
+    titleEl.innerHTML = `<i data-lucide="filter" style="width:13px;height:13px;color:#c9a84c;"></i><span style="color:#c9a84c;">${FILTER_LABELS[activeFilter]}</span>`;
+    const html = filtered.length
+      ? filtered.map(t => {
+          const goal = GOALS.find(g => g.id === t.goalId);
+          return taskCardHtml(t, goal?.label);
+        }).join('')
+      : '<p style="text-align:center;font-size:12px;color:#a09880;padding:24px 0;">該当タスクなし</p>';
+    el.innerHTML = html;
+    lucide.createIcons();
+    return;
+  }
+
+  let items = [];
+  if (currentTab === 'goal') {
+    const goal = GOALS.find(g => g.id === selectedId);
+    titleEl.innerHTML = `<i data-lucide="list-checks" style="width:13px;height:13px;color:#8b7d5e;"></i>${goal?.label || ''} のタスク`;
+    items = TASKS.filter(t => t.goalId === selectedId);
+  } else {
+    const member = MEMBERS.find(m => m.id === selectedId);
+    titleEl.innerHTML = `<i data-lucide="list-checks" style="width:13px;height:13px;color:#8b7d5e;"></i>${member?.name || ''} のタスク`;
+    items = TASKS.filter(t => t.assignee === member?.name);
+  }
+
+  let html = '';
+
+  if (sortMode === 'due') {
+    // 期日順（未設定は末尾）
+    const sorted = [...items].sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    }).filter(t => t.status !== '完了');
+    const done = items.filter(t => t.status === '完了');
+
+    [...sorted, ...done].forEach(t => {
+      html += taskCardHtml(t);
+    });
+  } else {
+    STATUS_ORDER.forEach(status => {
+      const group = items.filter(t => t.status === status);
+      if (!group.length) return;
+      const bc = STATUS_BADGE[status];
+      html += `<div style="margin-bottom:12px;">
+        <div class="group-label">
+          <span class="badge ${bc}">${status}</span>
+          <span class="group-count">${group.length}</span>
+        </div>`;
+      group.forEach(t => { html += taskCardHtml(t); });
+      html += '</div>';
+    });
+  }
+
+  el.innerHTML = html || '<p style="text-align:center;font-size:12px;color:#a09880;padding:24px 0;">タスクなし</p>';
+  lucide.createIcons();
+}
+
+function taskCardHtml(t, subLabel) {
+  const isActive = t.id === selectedTaskId;
+  const badge = dueBadge(t.dueDate, t.status);
+  return `<button class="task-card${isActive ? ' active' : ''}" onclick="selectTask('${t.id}')">
+    ${subLabel ? `<div style="font-size:9px;color:${isActive ? '#c9a84c' : '#a09880'};margin-bottom:2px;">${subLabel}</div>` : ''}
+    <div class="task-title">${t.title}</div>
+    <div class="task-meta">
+      ${t.assignee
+        ? `<span>${t.assignee}</span>`
+        : `<span style="color:#7c2d12;font-weight:700;">未割当</span>`
+      }
+      ${t.dueDate ? `<span style="margin-left:auto;">${t.dueDate}</span>` : ''}
+      ${badge ? `<span>${badge}</span>` : ''}
+    </div>
+  </button>`;
+}
+
+// ── Pane 3 ──────────────────────────────────────────
+function renderPane3() {
+  const el = document.getElementById('pane3-content');
+  const task = TASKS.find(t => t.id === selectedTaskId);
+  if (!task) { el.innerHTML = '<p style="color:#a09880;font-size:12px;">タスクを選んでください</p>'; return; }
+
+  document.getElementById('header-breadcrumb').textContent = task.title;
+  const bc = STATUS_BADGE[task.status];
+  const dpClass = duePillClass(task.dueDate, task.status);
+  const days = task.dueDate ? daysUntil(task.dueDate) : null;
+  const dueLabel = task.dueDate
+    ? (days < 0 ? `${task.dueDate}（期限超過）` : days <= 7 ? `${task.dueDate}（残り${days}日）` : task.dueDate)
+    : null;
+
+  el.innerHTML = `
+    <div style="margin-bottom:16px;">
+      <h2 style="font-size:15px;font-weight:800;color:#2d2820;line-height:1.45;margin-bottom:10px;">${task.title}</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        <span class="badge ${bc}" style="font-size:11px;padding:4px 10px;">${task.status}</span>
+        ${task.assignee
+          ? `<span class="pill-tag pill-assignee"><i data-lucide="user" style="width:11px;height:11px;"></i>${task.assignee}</span>`
+          : `<span class="pill-tag pill-unassigned"><i data-lucide="user-x" style="width:11px;height:11px;"></i>未割当</span>`
+        }
+        ${dueLabel
+          ? `<span class="pill-tag ${dpClass}"><i data-lucide="calendar" style="width:11px;height:11px;"></i>期限: ${dueLabel}</span>`
+          : ''
+        }
+      </div>
+    </div>
+    <hr style="border:none;border-top:1px solid #e5e1d8;margin-bottom:16px;">
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <i data-lucide="zap" style="width:13px;height:13px;color:#c9a84c;"></i>
+        <span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#8b7d5e;">次の一手（課長が書く・公式）</span>
+      </div>
+      ${task.nextAction
+        ? `<div class="next-action-box">${task.nextAction}</div>`
+        : `<div class="next-action-empty">未記入（まだ把握できていない箇所）</div>`
+      }
+    </div>
+    <hr style="border:none;border-top:1px solid #e5e1d8;margin-bottom:16px;">
+    <div class="detail-card">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+        <i data-lucide="info" style="width:13px;height:13px;color:#8b7d5e;"></i>
+        <span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#8b7d5e;">タスク詳細</span>
+      </div>
+      <dl style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <dt style="font-size:10px;color:#a09880;margin-bottom:2px;">担当者</dt>
+          <dd style="font-size:13px;font-weight:600;color:#2d2820;">${task.assignee || '—'}</dd>
+        </div>
+        <div>
+          <dt style="font-size:10px;color:#a09880;margin-bottom:2px;">期限</dt>
+          <dd style="font-size:13px;font-weight:600;color:${task.dueDate && daysUntil(task.dueDate) <= 7 && task.status !== '完了' ? '#7c2d12' : '#2d2820'};">${task.dueDate || '未設定'}</dd>
+        </div>
+        <div>
+          <dt style="font-size:10px;color:#a09880;margin-bottom:2px;">年度目標</dt>
+          <dd style="font-size:13px;font-weight:600;color:#2d2820;">${GOALS.find(g => g.id === task.goalId)?.label || '—'}</dd>
+        </div>
+        <div>
+          <dt style="font-size:10px;color:#a09880;margin-bottom:2px;">ステータス</dt>
+          <dd style="font-size:13px;font-weight:600;color:#2d2820;">${task.status}</dd>
+        </div>
+      </dl>
+    </div>`;
+  lucide.createIcons();
+}
+
+// ── Pane 4 ──────────────────────────────────────────
+function renderPane4() {
+  const el = document.getElementById('pane4-content');
+  const task = TASKS.find(t => t.id === selectedTaskId);
+  if (!task || task.notes.length === 0) {
+    el.innerHTML = `<div style="border:1px dashed #d5cfc4;border-radius:10px;padding:24px;text-align:center;background:#faf8f2;">
+      <i data-lucide="notebook" style="width:20px;height:20px;color:#d5cfc4;display:block;margin:0 auto 6px;"></i>
+      <p style="font-size:11px;color:#a09880;">メモなし</p></div>`;
+    lucide.createIcons();
+    return;
+  }
+  el.innerHTML = task.notes.map((n, i) => `
+    <div class="note-item">
+      <p style="font-size:10px;color:#c9a84c;margin-bottom:2px;">メモ ${i + 1}</p>
+      <p style="font-size:12px;color:#4a4540;line-height:1.5;">${n}</p>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+// ── イベント ─────────────────────────────────────────
+function selectItem(id) {
+  selectedId = id;
+  let tasks = [];
+  if (currentTab === 'goal') {
+    tasks = TASKS.filter(t => t.goalId === id);
+  } else {
+    const m = MEMBERS.find(m => m.id === id);
+    tasks = TASKS.filter(t => t.assignee === m?.name);
+  }
+  selectedTaskId = tasks[0]?.id || '';
+  renderAll();
+}
+
+function selectTask(taskId) {
+  selectedTaskId = taskId;
+  renderTasks();
+  renderPane3();
+  renderPane4();
+}
+
+function renderAll() {
+  updateStats();
+  renderPane1();
+  renderTasks();
+  renderPane3();
+  renderPane4();
+  lucide.createIcons();
+}
+
+// 初期表示
+selectedTaskId = TASKS.find(t => t.goalId === 'g1')?.id || '';
+renderAll();
+</script>
+</body>
+</html>
