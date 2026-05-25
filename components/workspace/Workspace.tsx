@@ -11,6 +11,7 @@ import {
   type Task,
   type TaskStatus,
   type Department,
+  type Member,
   type TaskGroup,
   TASK_STATUS_ORDER,
 } from "@/lib/schema";
@@ -19,9 +20,12 @@ import { ARCHIVED_GROUP_LABEL, TASK_STATUS_LABELS } from "@/lib/labels";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { GlobalHeader } from "@/components/workspace/GlobalHeader";
 import { PositionPane } from "@/components/workspace/PositionPane";
+import { MemberPane } from "@/components/workspace/MemberPane";
 import { TaskListPane } from "@/components/workspace/TaskListPane";
 import { TaskDashboardPane } from "@/components/workspace/TaskDashboardPane";
 import { TaskNotesPane } from "@/components/workspace/TaskNotesPane";
+
+export type ViewMode = "goal" | "member";
 
 function findPositionMeta(
   departments: Department[],
@@ -41,17 +45,25 @@ function defaultPositionId(departments: Department[]): string {
 type WorkspaceProps = {
   initialDepartments: Department[];
   initialTasks: Task[];
+  initialMembers: Member[];
   workspace: { name: string; icon: string };
 };
 
 export function Workspace({
   initialDepartments,
   initialTasks,
+  initialMembers,
   workspace,
 }: WorkspaceProps) {
   const [departments, setDepartments] =
     useState<Department[]>(initialDepartments);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  // ===== ビューモード =====
+  const [viewMode, setViewMode] = useState<ViewMode>("goal");
+  const [selectedMemberId, setSelectedMemberId] = useState<string>(
+    initialMembers[0]?.id ?? "",
+  );
 
   const firstPos = defaultPositionId(initialDepartments);
   const [selectedCategoryId, setSelectedCategoryId] = useState(firstPos);
@@ -107,12 +119,45 @@ export function Workspace({
     [tasks, selectedCategoryId],
   );
 
+  /** 課員ビュー用：選択された課員のタスク */
+  const tasksForMember = useMemo(() => {
+    if (!selectedMemberId) return [];
+    const member = initialMembers.find((m) => m.id === selectedMemberId);
+    if (!member) return [];
+    return tasks.filter((t) => !t.archived && t.assignee === member.name);
+  }, [tasks, selectedMemberId, initialMembers]);
+
+  /** 課員ごとのタスク件数・警告件数 */
+  const memberTaskCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const alerts: Record<string, number> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (const member of initialMembers) {
+      const memberTasks = tasks.filter(
+        (t) => !t.archived && t.assignee === member.name && t.status !== "done",
+      );
+      counts[member.id] = memberTasks.length;
+      alerts[member.id] = memberTasks.filter((t) => {
+        if (!t.dueDate) return false;
+        const days = Math.ceil(
+          (new Date(t.dueDate).getTime() - today.getTime()) / 86_400_000,
+        );
+        return days <= 7;
+      }).length;
+    }
+    return { counts, alerts };
+  }, [tasks, initialMembers]);
+
+  /** 表示対象タスク（ビューに応じて切り替え） */
+  const activeTasks = viewMode === "goal" ? tasksInCategory : tasksForMember;
+
   /** カテゴリー内で選択 ID が無効なら先頭タスクを代表表示する（effect で state を直さない） */
   const activeTask = useMemo(() => {
-    const picked = tasksInCategory.find((t) => t.id === selectedTaskId);
+    const picked = activeTasks.find((t) => t.id === selectedTaskId);
     if (picked) return picked;
-    return tasksInCategory[0] ?? null;
-  }, [tasksInCategory, selectedTaskId]);
+    return activeTasks[0] ?? null;
+  }, [activeTasks, selectedTaskId]);
 
   const pane4Open = activeTask !== null && !pane4ManuallyClosed;
 
@@ -136,21 +181,22 @@ export function Workspace({
   );
 
   const taskGroups: TaskGroup[] = useMemo(() => {
-    const byCat = tasks.filter(
-      (t) => t.categoryId === selectedCategoryId && !t.archived,
-    );
+    const filtered = activeTasks;
     const stageGroups: TaskGroup[] = TASK_STATUS_ORDER.map((status) => ({
       kind: "status" as const,
       status,
       label: TASK_STATUS_LABELS[status],
-      items: byCat
+      items: filtered
         .filter((t) => t.status === status)
         .map((t) => ({ id: t.id, title: t.title, assignee: t.assignee, dueDate: t.dueDate })),
     }));
 
-    const archivedItems = tasks
-      .filter((t) => t.archived && t.categoryId === selectedCategoryId)
-      .map((t) => ({ id: t.id, title: t.title, assignee: t.assignee, dueDate: t.dueDate }));
+    const archivedItems =
+      viewMode === "goal"
+        ? tasks
+            .filter((t) => t.archived && t.categoryId === selectedCategoryId)
+            .map((t) => ({ id: t.id, title: t.title, assignee: t.assignee, dueDate: t.dueDate }))
+        : [];
 
     if (archivedItems.length === 0) return stageGroups;
     return [
@@ -161,7 +207,7 @@ export function Workspace({
         items: archivedItems,
       },
     ];
-  }, [tasks, selectedCategoryId]);
+  }, [activeTasks, viewMode, tasks, selectedCategoryId]);
 
   const addTask = useCallback(
     (status: TaskStatus, title: string) => {
@@ -273,14 +319,24 @@ export function Workspace({
       defaultOpen
       className="h-screen w-full overflow-hidden bg-background text-foreground"
     >
-      <PositionPane
-        workspaceName={workspace.name}
-        departments={departmentsWithCounts}
-        selectedPositionId={selectedCategoryId}
-        onSelectPosition={selectCategory}
-        onAddPosition={addPosition}
-        onDeletePosition={deletePosition}
-      />
+      {viewMode === "goal" ? (
+        <PositionPane
+          workspaceName={workspace.name}
+          departments={departmentsWithCounts}
+          selectedPositionId={selectedCategoryId}
+          onSelectPosition={selectCategory}
+          onAddPosition={addPosition}
+          onDeletePosition={deletePosition}
+        />
+      ) : (
+        <MemberPane
+          members={initialMembers}
+          taskCounts={memberTaskCounts.counts}
+          alertCounts={memberTaskCounts.alerts}
+          selectedMemberId={selectedMemberId}
+          onSelectMember={setSelectedMemberId}
+        />
+      )}
       <SidebarInset className="flex min-w-0 flex-col bg-background">
         <GlobalHeader
           departmentTitle={departmentTitle}
@@ -290,6 +346,8 @@ export function Workspace({
           onAddDepartment={addDepartment}
           onDeleteDepartment={deleteDepartment}
           stats={stats}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
         <div className="flex min-h-0 flex-1">
           <TaskListPane

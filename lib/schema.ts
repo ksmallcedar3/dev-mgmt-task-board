@@ -21,6 +21,22 @@ export const departmentSchema = z.object({
 });
 export type Department = z.infer<typeof departmentSchema>;
 
+// ===== 課員 =====
+
+export const memberTypeSchema = z.enum(["leader", "member", "external"]);
+export type MemberType = z.infer<typeof memberTypeSchema>;
+
+export const memberSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  role: z.string(),
+  /** leader=係長以上, member=一般課員, external=課外協力者 */
+  type: memberTypeSchema,
+});
+export type Member = z.infer<typeof memberSchema>;
+
+export const membersSchema = z.array(memberSchema);
+
 // ===== タスク =====
 
 export const taskStatusSchema = z.enum([

@@ -1,0 +1,10 @@
+[
+  { "id": "m-kosugi",    "name": "小杉",   "role": "課長",         "type": "leader"   },
+  { "id": "m-ishimoto",  "name": "石本",   "role": "係長",         "type": "leader"   },
+  { "id": "m-otsuka",    "name": "大塚",   "role": "課員",         "type": "member"   },
+  { "id": "m-shoji",     "name": "庄治",   "role": "課員",         "type": "member"   },
+  { "id": "m-osuga",     "name": "大須賀", "role": "課員",         "type": "member"   },
+  { "id": "m-kakimoto",  "name": "柿本",   "role": "課員",         "type": "member"   },
+  { "id": "m-nakamura",  "name": "中村知", "role": "課長（課外）", "type": "external" },
+  { "id": "m-hirabayashi","name": "平林",  "role": "課長（課外）", "type": "external" }
+]

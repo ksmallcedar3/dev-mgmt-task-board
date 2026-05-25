@@ -1,8 +1,10 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Loader2, Settings, UserX } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Settings, Target, Users, UserX } from "lucide-react";
 
 import { type Department } from "@/lib/schema";
+import { type ViewMode } from "@/components/workspace/Workspace";
+import { cn } from "@/lib/utils";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -36,6 +38,8 @@ type GlobalHeaderProps = {
   onAddDepartment: (name: string) => void;
   onDeleteDepartment: (deptId: string) => void;
   stats: Stats;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 };
 
 export function GlobalHeader({
@@ -46,6 +50,8 @@ export function GlobalHeader({
   onAddDepartment,
   onDeleteDepartment,
   stats,
+  viewMode,
+  onViewModeChange,
 }: GlobalHeaderProps) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-3">
@@ -69,6 +75,31 @@ export function GlobalHeader({
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
+
+      {/* ビュー切替タブ */}
+      <div className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-muted p-0.5 text-xs">
+        {(
+          [
+            { id: "goal", label: "目標ビュー", icon: Target },
+            { id: "member", label: "課員ビュー", icon: Users },
+          ] as const
+        ).map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onViewModeChange(id)}
+            className={cn(
+              "flex items-center gap-1 rounded px-2.5 py-1 font-medium transition-colors",
+              viewMode === id
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Icon className="size-3" />
+            {label}
+          </button>
+        ))}
+      </div>
 
       {/* サマリ統計バッジ */}
       <div className="flex shrink-0 items-center gap-3 text-xs">
