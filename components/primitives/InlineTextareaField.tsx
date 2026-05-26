@@ -22,6 +22,8 @@ export type InlineTextareaFieldProps = {
   value: string;
   /** 値が変わって blur した時に呼ばれる */
   onSave: (v: string) => void;
+  /** 値が変わるたびに呼ばれる（保存ボタン用） */
+  onChange?: (v: string) => void;
   /** スクリーンリーダー向けラベル */
   ariaLabel: string;
   /** 空のときの placeholder。デフォルト "未設定" */
@@ -33,6 +35,7 @@ export type InlineTextareaFieldProps = {
 export function InlineTextareaField({
   value,
   onSave,
+  onChange,
   ariaLabel,
   placeholder,
   className,
@@ -49,7 +52,10 @@ export function InlineTextareaField({
       value={localValue}
       placeholder={placeholder ?? "未設定"}
       aria-label={ariaLabel}
-      onChange={(e) => setLocalValue(e.target.value)}
+      onChange={(e) => {
+        setLocalValue(e.target.value);
+        onChange?.(e.target.value);
+      }}
       onBlur={() => {
         if (localValue !== value) onSave(localValue);
       }}

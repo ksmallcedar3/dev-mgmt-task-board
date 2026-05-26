@@ -25,7 +25,9 @@ import { Separator } from "@/components/ui/separator";
 import { InlineTextareaField, SectionLabel } from "@/components/primitives";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, UserRound } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarDays, UserRound, Save, Check } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 
 type TaskDashboardPaneProps = {
   task: Task | null;
@@ -42,6 +44,37 @@ export function TaskDashboardPane({
   onUpdateAssignee,
   onUpdateDueDate,
 }: TaskDashboardPaneProps) {
+  const [assignee, setAssignee] = useState(task?.assignee ?? "");
+  const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
+  const [nextAction, setNextAction] = useState(task?.nextAction ?? "");
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  // タスクが切り替わったときにローカル state を同期
+  useEffect(() => {
+    setAssignee(task?.assignee ?? "");
+    setDueDate(task?.dueDate ?? "");
+    setNextAction(task?.nextAction ?? "");
+    setSavedAt(null);
+  }, [task?.id]);
+
+  // localStorage 復元など外部から値が変わった場合も同期
+  useEffect(() => { setAssignee(task?.assignee ?? ""); }, [task?.assignee]);
+  useEffect(() => { setDueDate(task?.dueDate ?? ""); }, [task?.dueDate]);
+  useEffect(() => { setNextAction(task?.nextAction ?? ""); }, [task?.nextAction]);
+
+  const isDirty =
+    assignee !== (task?.assignee ?? "") ||
+    dueDate !== (task?.dueDate ?? "") ||
+    nextAction !== (task?.nextAction ?? "");
+
+  const handleSave = useCallback(() => {
+    if (!task) return;
+    if (assignee !== (task.assignee ?? "")) onUpdateAssignee(assignee);
+    if (dueDate !== (task.dueDate ?? "")) onUpdateDueDate(dueDate);
+    if (nextAction !== (task.nextAction ?? "")) onUpdateNextAction(nextAction);
+    setSavedAt(Date.now());
+  }, [task, assignee, dueDate, nextAction, onUpdateAssignee, onUpdateDueDate, onUpdateNextAction]);
+
   if (!task) {
     return (
       <section className="flex min-w-0 flex-1 flex-col border-r border-border bg-muted/10">
@@ -53,6 +86,8 @@ export function TaskDashboardPane({
       </section>
     );
   }
+
+  const justSaved = savedAt !== null && !isDirty;
 
   return (
     <section className="flex min-w-0 flex-1 flex-col border-r border-border bg-muted/10">
@@ -96,8 +131,9 @@ export function TaskDashboardPane({
                 </Label>
                 <InlineTextareaField
                   ariaLabel="担当者"
-                  value={task.assignee ?? ""}
+                  value={assignee}
                   onSave={onUpdateAssignee}
+                  onChange={setAssignee}
                   placeholder="担当者名を入力（空欄 = 未割当）"
                 />
               </div>
@@ -108,7 +144,8 @@ export function TaskDashboardPane({
                 <input
                   id="task-due-date"
                   type="date"
-                  defaultValue={task.dueDate ?? ""}
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
                   onBlur={(e) => onUpdateDueDate(e.target.value)}
                   className="h-8 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
                 />
@@ -152,7 +189,7 @@ export function TaskDashboardPane({
 
           <div className="flex flex-col gap-2">
             <SectionLabel id="next-action-label">次の一手</SectionLabel>
-            {task.nextAction ? (
+            {(nextAction || task.nextAction) ? (
               <div
                 className="rounded-xl p-4 text-sm leading-relaxed"
                 style={{
@@ -163,8 +200,9 @@ export function TaskDashboardPane({
               >
                 <InlineTextareaField
                   ariaLabel="次の一手"
-                  value={task.nextAction}
+                  value={nextAction}
                   onSave={onUpdateNextAction}
+                  onChange={setNextAction}
                   placeholder="次に取る行動を一文で"
                   className="bg-transparent text-[#e8d9a8] placeholder:text-[#a09880]"
                 />
@@ -179,13 +217,33 @@ export function TaskDashboardPane({
               >
                 <InlineTextareaField
                   ariaLabel="次の一手"
-                  value={task.nextAction}
+                  value={nextAction}
                   onSave={onUpdateNextAction}
+                  onChange={setNextAction}
                   placeholder="次に取る行動を一文で（公式・Pane 4 の備考とは別）"
                   className="text-sm italic text-muted-foreground"
                 />
               </div>
             )}
+          </div>
+
+          {/* 保存ボタン */}
+          <div className="flex items-center justify-end gap-2 pt-1 pb-2">
+            {justSaved && (
+              <span className="flex items-center gap-1 text-xs text-emerald-600">
+                <Check className="size-3" />
+                保存済み
+              </span>
+            )}
+            <Button
+              size="sm"
+              disabled={!isDirty}
+              onClick={handleSave}
+              className="gap-1.5"
+            >
+              <Save className="size-3.5" />
+              保存
+            </Button>
           </div>
         </div>
       </ScrollArea>
