@@ -152,12 +152,40 @@ export function TaskDashboardPane({
 
           <div className="flex flex-col gap-2">
             <SectionLabel id="next-action-label">次の一手</SectionLabel>
-            <InlineTextareaField
-              ariaLabel="次の一手"
-              value={task.nextAction}
-              onSave={onUpdateNextAction}
-              placeholder="次に取る行動を一文で（公式・Pane 4 の備考とは別）"
-            />
+            {task.nextAction ? (
+              <div
+                className="rounded-xl p-4 text-sm leading-relaxed"
+                style={{
+                  background: "linear-gradient(135deg, #111125, #1a1a38)",
+                  border: "1px solid rgba(201,168,76,0.25)",
+                  color: "#e8d9a8",
+                }}
+              >
+                <InlineTextareaField
+                  ariaLabel="次の一手"
+                  value={task.nextAction}
+                  onSave={onUpdateNextAction}
+                  placeholder="次に取る行動を一文で"
+                  className="bg-transparent text-[#e8d9a8] placeholder:text-[#a09880]"
+                />
+              </div>
+            ) : (
+              <div
+                className="rounded-xl p-4"
+                style={{
+                  border: "1px dashed #d5cfc4",
+                  background: "#faf8f2",
+                }}
+              >
+                <InlineTextareaField
+                  ariaLabel="次の一手"
+                  value={task.nextAction}
+                  onSave={onUpdateNextAction}
+                  placeholder="次に取る行動を一文で（公式・Pane 4 の備考とは別）"
+                  className="text-sm italic text-muted-foreground"
+                />
+              </div>
+            )}
           </div>
         </div>
       </ScrollArea>

@@ -40,6 +40,8 @@ type GlobalHeaderProps = {
   stats: Stats;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  activeFilter: "unassigned" | "inProgress" | "alert" | "done" | null;
+  onFilterChange: (key: "unassigned" | "inProgress" | "alert" | "done") => void;
 };
 
 export function GlobalHeader({
@@ -52,122 +54,130 @@ export function GlobalHeader({
   stats,
   viewMode,
   onViewModeChange,
+  activeFilter,
+  onFilterChange,
 }: GlobalHeaderProps) {
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-3">
-      <Breadcrumb
-        className="min-w-0 flex-1 overflow-hidden"
-        aria-label="パンくず"
+    <header className="shrink-0">
+      {/* ── 1段目：タイトル・タブ・サマリ ── */}
+      <div
+        className="flex items-end justify-between gap-4 px-5 py-3"
+        style={{ background: "linear-gradient(135deg, #0d0d1a 0%, #1c1a30 100%)" }}
       >
-        <BreadcrumbList className="flex-nowrap text-[11px]">
-          <BreadcrumbItem className="shrink-0">
-            <BreadcrumbLink>{departmentTitle}</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem className="shrink-0">
-            <BreadcrumbLink>{positionTitle}</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem className="min-w-0">
-            <BreadcrumbPage className="truncate font-medium">
-              {taskTitle}
-            </BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+        {/* 左：タイトル */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#c9a84c", letterSpacing: "0.15em" }}>
+            Task Board
+          </p>
+          <h1 className="text-[22px] font-black leading-tight tracking-tight text-white">
+            開発管理課タスク状況管理（2026）
+          </h1>
+        </div>
 
-      {/* ビュー切替タブ */}
-      <div className="flex shrink-0 items-center gap-0.5 rounded-md border border-border bg-muted p-0.5 text-xs">
-        {(
-          [
-            { id: "goal", label: "目標ビュー", icon: Target },
-            { id: "member", label: "課員ビュー", icon: Users },
-          ] as const
-        ).map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onViewModeChange(id)}
-            className={cn(
-              "flex items-center gap-1 rounded px-2.5 py-1 font-medium transition-colors",
-              viewMode === id
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Icon className="size-3" />
-            {label}
-          </button>
-        ))}
-      </div>
+        {/* 右：タブ＋サマリ */}
+        <div className="flex shrink-0 flex-col items-end gap-2.5">
+          {/* ビュー切替タブ */}
+          <div className="flex gap-1.5">
+            {(
+              [
+                { id: "goal", label: "目標ビュー", icon: Target },
+                { id: "member", label: "課員ビュー", icon: Users },
+              ] as const
+            ).map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onViewModeChange(id)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full border px-4 py-1 text-[12px] font-bold transition-all",
+                  viewMode === id
+                    ? "border-[#c9a84c] bg-[#c9a84c] text-[#0d0d1a]"
+                    : "border-[#2d2850] bg-transparent text-[#a09880] hover:border-[#c9a84c] hover:text-[#c9a84c]",
+                )}
+              >
+                <Icon className="size-3" />
+                {label}
+              </button>
+            ))}
+          </div>
 
-      {/* サマリ統計バッジ */}
-      <div className="flex shrink-0 items-center gap-3 text-xs">
-        <Tooltip>
-          <TooltipTrigger
-            className={`flex items-center gap-1 font-medium ${stats.unassigned > 0 ? "text-destructive" : "text-muted-foreground"}`}
-          >
-            <UserX className="size-3.5" aria-hidden="true" />
-            <span>{stats.unassigned}</span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">未割当タスク</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger className="flex items-center gap-1 font-medium text-muted-foreground">
-            <Loader2 className="size-3.5" aria-hidden="true" />
-            <span>{stats.inProgress}</span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">進行中タスク</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger
-            className={`flex items-center gap-1 font-medium ${stats.alert > 0 ? "text-amber-600" : "text-muted-foreground"}`}
-          >
-            <AlertCircle className="size-3.5" aria-hidden="true" />
-            <span>{stats.alert}</span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">期日警告（7日以内）</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger className="flex items-center gap-1 font-medium text-muted-foreground">
-            <CheckCircle2 className="size-3.5" aria-hidden="true" />
-            <span>{stats.done}</span>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">完了タスク</TooltipContent>
-        </Tooltip>
-
-        <span className="h-4 w-px bg-border" aria-hidden="true" />
-      </div>
-
-      <Dialog>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <DialogTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="shrink-0 text-muted-foreground hover:text-foreground"
-                    aria-label="ワークスペース設定"
+          {/* サマリ統計（クリックでフィルター） */}
+          <div className="flex gap-1.5">
+            {(
+              [
+                { key: "unassigned" as const, label: "未割当",   value: stats.unassigned, color: "#f4a488", tooltip: "クリックで未割当タスクを絞り込み" },
+                { key: "inProgress" as const, label: "進行中",   value: stats.inProgress, color: "#e8d9a8", tooltip: "クリックで進行中タスクを絞り込み" },
+                { key: "alert"      as const, label: "期日警告", value: stats.alert,       color: "#f4a488", tooltip: "クリックで期日警告タスクを絞り込み" },
+                { key: "done"       as const, label: "完了",     value: stats.done,        color: "#7ecb97", tooltip: "クリックで完了タスクを絞り込み" },
+              ]
+            ).map(({ key, label, value, color, tooltip }) => {
+              const isActive = activeFilter === key;
+              return (
+                <Tooltip key={key}>
+                  <TooltipTrigger
+                    onClick={() => onFilterChange(key)}
+                    className={cn(
+                      "cursor-pointer rounded-lg border-2 px-2 py-1 text-center transition-all hover:border-[rgba(201,168,76,0.4)]",
+                      isActive ? "border-[#c9a84c] bg-[rgba(201,168,76,0.08)]" : "border-transparent",
+                    )}
                   >
-                    <Settings />
-                  </Button>
+                    <div className="text-xl font-black leading-none" style={{ color }}>
+                      {value}
+                    </div>
+                    <div className="mt-0.5 text-[10px]" style={{ color: "#a09880" }}>
+                      {label}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{tooltip}</TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 2段目：パンくず＋設定 ── */}
+      <div
+        className="flex items-center gap-2 border-b px-5 py-1.5"
+        style={{ background: "#1a1a30", borderColor: "#2d2850" }}
+      >
+        <span className="text-[11px]" style={{ color: "#6b6490" }}>
+          開発管理課タスク状況管理
+        </span>
+        <span className="text-[11px]" style={{ color: "#3d3a5e" }}>/</span>
+        <span className="text-[11px] font-semibold" style={{ color: "#c9a84c" }}>
+          {positionTitle || taskTitle || "—"}
+        </span>
+
+        <div className="ml-auto">
+          <Dialog>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <DialogTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-[#6b6490] hover:text-[#c9a84c]"
+                        aria-label="ワークスペース設定"
+                      >
+                        <Settings />
+                      </Button>
+                    }
+                  />
                 }
               />
-            }
-          />
-          <TooltipContent side="bottom">ワークスペース設定</TooltipContent>
-        </Tooltip>
-        <SettingsDialogContent
-          departments={departments}
-          onAddDepartment={onAddDepartment}
-          onDeleteDepartment={onDeleteDepartment}
-        />
-      </Dialog>
+              <TooltipContent side="bottom">ワークスペース設定</TooltipContent>
+            </Tooltip>
+            <SettingsDialogContent
+              departments={departments}
+              onAddDepartment={onAddDepartment}
+              onDeleteDepartment={onDeleteDepartment}
+            />
+          </Dialog>
+        </div>
+      </div>
     </header>
   );
 }

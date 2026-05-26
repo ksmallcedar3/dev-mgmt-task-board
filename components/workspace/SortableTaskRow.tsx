@@ -66,11 +66,12 @@ export function SortableTaskRow({
       <button
         type="button"
         onClick={() => onSelect(task.id)}
+        style={selected ? { background: "linear-gradient(135deg, #111125, #1a1a38)", borderColor: "rgba(201,168,76,0.35)" } : undefined}
         className={cn(
-          "flex w-full items-center gap-2 rounded-md px-2.5 py-2.5 text-left transition-colors",
+          "flex w-full items-center gap-2 rounded-md border border-transparent px-2.5 py-2.5 text-left transition-colors",
           "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
           selected
-            ? "bg-accent text-accent-foreground"
+            ? "text-[#e8d9a8]"
             : "text-foreground hover:bg-muted",
         )}
       >
@@ -79,22 +80,23 @@ export function SortableTaskRow({
           {...listeners}
           aria-label={`${task.title} の並び替え`}
           className={cn(
-            "flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground",
+            "flex size-5 shrink-0 cursor-grab items-center justify-center rounded",
             "opacity-0 transition-opacity group-focus-within/task:opacity-100 group-hover/task:opacity-100",
-            "hover:text-foreground active:cursor-grabbing",
+            "active:cursor-grabbing",
             "outline-none focus-visible:opacity-100 focus-visible:ring-3 focus-visible:ring-ring/50",
+            selected ? "text-[#a09880] hover:text-[#e8d9a8]" : "text-muted-foreground hover:text-foreground",
           )}
           onClick={(e) => e.stopPropagation()}
         >
           <GripVertical aria-hidden="true" className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm">{task.title}</p>
+          <p className={cn("truncate text-sm", selected && "font-semibold")}>{task.title}</p>
           {/* 担当者・期日の補助情報 */}
           <div className="mt-0.5 flex items-center gap-2 text-xs">
             {/* 担当者 */}
             {task.assignee ? (
-              <span className="truncate text-muted-foreground">{task.assignee}</span>
+              <span className={cn("truncate", selected ? "text-[#a09880]" : "text-muted-foreground")}>{task.assignee}</span>
             ) : (
               <span className="font-medium text-destructive">未割当</span>
             )}
@@ -108,7 +110,7 @@ export function SortableTaskRow({
                 return <span className="ml-auto shrink-0 font-medium text-destructive">{days}日後</span>;
               if (days <= 14)
                 return <span className="ml-auto shrink-0 text-amber-600">{days}日後</span>;
-              return <span className="ml-auto shrink-0 text-muted-foreground">{task.dueDate}</span>;
+              return <span className={cn("ml-auto shrink-0", selected ? "text-[#a09880]" : "text-muted-foreground")}>{task.dueDate}</span>;
             })()}
           </div>
         </div>

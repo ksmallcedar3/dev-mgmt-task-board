@@ -65,6 +65,12 @@ export function Workspace({
     initialMembers[0]?.id ?? "",
   );
 
+  // ===== ヘッダーフィルター =====
+  const [activeFilter, setActiveFilter] = useState<"unassigned" | "inProgress" | "alert" | "done" | null>(null);
+  const toggleFilter = useCallback((key: "unassigned" | "inProgress" | "alert" | "done") => {
+    setActiveFilter((prev) => (prev === key ? null : key));
+  }, []);
+
   const firstPos = defaultPositionId(initialDepartments);
   const [selectedCategoryId, setSelectedCategoryId] = useState(firstPos);
 
@@ -150,7 +156,28 @@ export function Workspace({
   }, [tasks, initialMembers]);
 
   /** 表示対象タスク（ビューに応じて切り替え） */
-  const activeTasks = viewMode === "goal" ? tasksInCategory : tasksForMember;
+  const baseActiveTasks = viewMode === "goal" ? tasksInCategory : tasksForMember;
+
+  /** フィルター適用後のタスク（全タスクから絞り込み） */
+  const activeTasks = useMemo(() => {
+    if (!activeFilter) return baseActiveTasks;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return tasks.filter((t) => {
+      if (t.archived) return false;
+      switch (activeFilter) {
+        case "unassigned": return !t.assignee && t.status !== "done";
+        case "inProgress": return t.status === "in_progress";
+        case "alert": {
+          if (t.status === "done" || !t.dueDate) return false;
+          const days = Math.ceil((new Date(t.dueDate).getTime() - today.getTime()) / 86_400_000);
+          return days <= 7;
+        }
+        case "done": return t.status === "done";
+        default: return true;
+      }
+    });
+  }, [activeFilter, baseActiveTasks, tasks]);
 
   /** カテゴリー内で選択 ID が無効なら先頭タスクを代表表示する（effect で state を直さない） */
   const activeTask = useMemo(() => {
@@ -348,7 +375,49 @@ export function Workspace({
           stats={stats}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          activeFilter={activeFilter}
+          onFilterChange={toggleFilter}
         />
+
+        {/* 未割当バナー */}
+        {stats.unassigned > 0 && (
+          <div
+            className="flex shrink-0 items-center gap-2 px-5 py-1.5"
+            style={{ background: "#fef7f4", borderBottom: "1px solid #f4c5b0" }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c2d12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <span className="text-[12px] font-bold" style={{ color: "#7c2d12" }}>
+              未割当タスク {stats.unassigned} 件
+            </span>
+            <span className="text-[12px]" style={{ color: "#9a3515" }}>
+              — 担当者が決まっていないタスクがあります。タスク一覧で確認して割り当ててください。
+            </span>
+          </div>
+        )}
+
+        {/* フィルターバー */}
+        {activeFilter && (
+          <div
+            className="flex shrink-0 items-center gap-2 px-5 py-1.5"
+            style={{ background: "#1a1a30", borderBottom: "1px solid #2d2850" }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span className="text-[11px] font-bold" style={{ color: "#c9a84c" }}>
+              {{ unassigned: "未割当", inProgress: "進行中", alert: "期日警告", done: "完了" }[activeFilter]}
+            </span>
+            <span className="text-[11px]" style={{ color: "#6b6490" }}>のタスクを全件表示中</span>
+            <button
+              type="button"
+              onClick={() => setActiveFilter(null)}
+              className="ml-auto flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] transition-colors"
+              style={{ borderColor: "#3d3a5e", color: "#a09880", background: "transparent" }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              クリア
+            </button>
+          </div>
+        )}
+
         <div className="flex min-h-0 flex-1">
           <TaskListPane
             categoryTitle={positionTitle || "カテゴリー"}

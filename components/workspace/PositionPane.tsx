@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { type Department } from "@/lib/schema";
 import { DeleteConfirmDialog } from "@/components/workspace/DeleteConfirmDialog";
 import {
@@ -95,9 +96,10 @@ export function PositionPane({
                           aria-current={active ? "page" : undefined}
                           type="button"
                           onClick={() => onSelectPosition(pos.id)}
+                          className={active ? "![background:linear-gradient(135deg,#0d0d1a,#1c1a30)] ![color:#e8d9a8] hover:![background:linear-gradient(135deg,#0d0d1a,#1c1a30)] hover:![color:#e8d9a8]" : ""}
                         >
                           <span className="truncate">{pos.name}</span>
-                          <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+                          <span className={cn("ml-auto text-xs tabular-nums", active ? "!text-[#c9a84c]" : "text-muted-foreground")}>
                             {pos.count}
                           </span>
                         </SidebarMenuButton>

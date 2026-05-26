@@ -13,6 +13,7 @@
  * 雛形では「職務経歴」「志望動機」のような長文項目で再利用。
  */
 
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
 export type InlineTextareaFieldProps = {
@@ -24,6 +25,8 @@ export type InlineTextareaFieldProps = {
   ariaLabel: string;
   /** 空のときの placeholder。デフォルト "未設定" */
   placeholder?: string;
+  /** 追加 CSS クラス */
+  className?: string;
 };
 
 export function InlineTextareaField({
@@ -31,6 +34,7 @@ export function InlineTextareaField({
   onSave,
   ariaLabel,
   placeholder,
+  className,
 }: InlineTextareaFieldProps) {
   return (
     <Textarea
@@ -48,7 +52,7 @@ export function InlineTextareaField({
           (e.target as HTMLTextAreaElement).blur();
         }
       }}
-      className="min-h-24 bg-card leading-relaxed whitespace-pre-line"
+      className={cn("min-h-24 bg-card leading-relaxed whitespace-pre-line", className)}
     />
   );
 }
