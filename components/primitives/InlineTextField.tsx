@@ -15,6 +15,7 @@
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 export type InlineTextFieldProps = {
   /** 現在の値（空文字で「未設定」placeholder 表示） */
@@ -39,20 +40,28 @@ export function InlineTextField({
   placeholder,
   className,
 }: InlineTextFieldProps) {
+  const [localValue, setLocalValue] = useState(value);
+
+  // 外部から value が変化した時（localStorage 復元後など）に表示を同期
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
   return (
     <Input
       type={inputType}
-      defaultValue={value}
+      value={localValue}
       placeholder={placeholder ?? "未設定"}
       aria-label={ariaLabel}
-      onBlur={(e) => {
-        if (e.target.value !== value) onSave(e.target.value);
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={() => {
+        if (localValue !== value) onSave(localValue);
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           (e.target as HTMLInputElement).blur();
         } else if (e.key === "Escape") {
-          (e.target as HTMLInputElement).value = value;
+          setLocalValue(value);
           (e.target as HTMLInputElement).blur();
         }
       }}

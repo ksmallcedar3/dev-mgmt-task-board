@@ -5,7 +5,9 @@
  * Pane 1 カテゴリー → Pane 2 ステータス別タスク → Pane 3 状況・次の一手 → Pane 4 備考。
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+
+const STORAGE_KEY = "dev-mgmt-task-board:tasks:v1";
 
 import {
   type Task,
@@ -57,7 +59,25 @@ export function Workspace({
 }: WorkspaceProps) {
   const [departments, setDepartments] =
     useState<Department[]>(initialDepartments);
+
+  // サーバーとクライアントで初期値を揃えるため、まず initialTasks で初期化する
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  // マウント後（クライアント側のみ）に localStorage から復元する
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Task[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTasks(parsed);
+        }
+      }
+    } catch {
+      // 壊れたデータは無視
+    }
+  }, []); // マウント時のみ実行
+
 
   // ===== ビューモード =====
   const [viewMode, setViewMode] = useState<ViewMode>("goal");
@@ -200,9 +220,13 @@ export function Workspace({
 
   const updateTask = useCallback(
     (id: string, patch: Partial<Task>) => {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
-      );
+      setTasks((prev) => {
+        const next = prev.map((t) => (t.id === id ? { ...t, ...patch } : t));
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
     },
     [],
   );
@@ -241,7 +265,11 @@ export function Workspace({
       const trimmed = title.trim();
       if (!trimmed) return;
       const newTask = createMinimalTask(selectedCategoryId, trimmed, status);
-      setTasks((prev) => [...prev, newTask]);
+      setTasks((prev) => {
+        const next = [...prev, newTask];
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+        return next;
+      });
       setSelectedTaskId(newTask.id);
       setPane4ManuallyClosed(false);
     },
@@ -249,17 +277,21 @@ export function Workspace({
   );
 
   const archiveTask = useCallback((id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, archived: true } : t)),
-    );
+    setTasks((prev) => {
+      const next = prev.map((t) => (t.id === id ? { ...t, archived: true } : t));
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
     setSelectedTaskId((prevId) => (prevId === id ? "" : prevId));
     setPane4ManuallyClosed(false);
   }, []);
 
   const restoreTask = useCallback((id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, archived: false } : t)),
-    );
+    setTasks((prev) => {
+      const next = prev.map((t) => (t.id === id ? { ...t, archived: false } : t));
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
   }, []);
 
   const moveTask = useCallback(
@@ -290,11 +322,13 @@ export function Workspace({
             count++;
           }
         }
-        return [
+        const next = [
           ...without.slice(0, absInsertAt),
           updated,
           ...without.slice(absInsertAt),
         ];
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+        return next;
       });
     },
     [selectedCategoryId],

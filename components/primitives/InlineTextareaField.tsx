@@ -8,13 +8,14 @@
  *   - `bg-card` で周囲（bg-background）より明るく「手前」感を出す
  *   - `field-sizing: content`（Tailwind v4 / shadcn v4 の textarea デフォルト）で内容に応じて自動リサイズ
  *   - 保存: blur で onSave 発火（値が変わっていれば）。Cmd+Enter で blur
- *   - キャンセル: Esc で defaultValue に戻して blur
+ *   - キャンセル: Esc で元の値に戻して blur
  *
  * 雛形では「職務経歴」「志望動機」のような長文項目で再利用。
  */
 
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import { useState, useEffect } from "react";
 
 export type InlineTextareaFieldProps = {
   /** 現在の値（空文字で「未設定」placeholder 表示） */
@@ -36,19 +37,27 @@ export function InlineTextareaField({
   placeholder,
   className,
 }: InlineTextareaFieldProps) {
+  const [localValue, setLocalValue] = useState(value);
+
+  // 外部から value が変化した時（localStorage 復元後など）に表示を同期
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
   return (
     <Textarea
-      defaultValue={value}
+      value={localValue}
       placeholder={placeholder ?? "未設定"}
       aria-label={ariaLabel}
-      onBlur={(e) => {
-        if (e.target.value !== value) onSave(e.target.value);
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={() => {
+        if (localValue !== value) onSave(localValue);
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
           (e.target as HTMLTextAreaElement).blur();
         } else if (e.key === "Escape") {
-          (e.target as HTMLTextAreaElement).value = value;
+          setLocalValue(value);
           (e.target as HTMLTextAreaElement).blur();
         }
       }}
