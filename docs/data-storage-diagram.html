@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>何を・どこに保存するか — データ設計の整理</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --muted: #5c6370;
+      --border: #e2e5ea;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --warn: #b45309;
+      --warn-soft: #fffbeb;
+      --ok: #047857;
+      --ok-soft: #ecfdf5;
+      --db: #7c3aed;
+      --db-soft: #f5f3ff;
+      --json: #047857;
+      --json-soft: #ecfdf5;
+      --md: #6b7280;
+      --md-soft: #f9fafb;
+      --phase1: #1d4ed8;
+      --phase2: #b45309;
+      --phase3: #7c3aed;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding: 2rem 1.25rem 4rem;
+    }
+    .wrap { max-width: 940px; margin: 0 auto; }
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    header .sub {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+    section h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-left: 0.75rem;
+      border-left: 4px solid var(--accent);
+    }
+    section h3 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin: 1.25rem 0 0.5rem;
+      color: var(--muted);
+    }
+
+    /* ── 3択カード ───────────────────────────── */
+    .three-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 640px) {
+      .three-grid { grid-template-columns: 1fr; }
+    }
+    .format-card {
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .format-card .fc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+    .format-card .fc-name {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .format-card .fc-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+    }
+    .format-card p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .format-card.md  { border-color: var(--border); background: var(--md-soft); }
+    .format-card.md  .fc-badge { background: #e5e7eb; color: var(--md); }
+    .format-card.json { border-color: var(--json); background: var(--json-soft); }
+    .format-card.json .fc-name { color: var(--json); }
+    .format-card.json .fc-badge { background: var(--json-soft); color: var(--json); border: 1px solid var(--json); }
+    .format-card.db { border-color: var(--db); background: var(--db-soft); }
+    .format-card.db .fc-name { color: var(--db); }
+    .format-card.db .fc-badge { background: var(--db-soft); color: var(--db); border: 1px solid var(--db); }
+
+    .evolve-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .evolve-row .arrow { font-size: 1.1rem; }
+    .evolve-row .label {
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 0.75rem;
+    }
+
+    /* ── データ別 表 ─────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th { background: var(--bg); font-weight: 600; }
+    tr.highlight-tasks td { background: var(--db-soft); }
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+    }
+    .tag-db   { background: var(--db-soft);   color: var(--db);   border: 1px solid var(--db);   }
+    .tag-json { background: var(--json-soft); color: var(--json); border: 1px solid var(--json); }
+
+    /* ── フローダイアグラム ───────────────────── */
+    .flow-diagram {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+    }
+    .flow-step {
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      min-width: 90px;
+      background: var(--bg);
+    }
+    .flow-step .fs-main { font-size: 0.8rem; font-weight: 600; }
+    .flow-step .fs-sub  { font-size: 0.7rem; color: var(--muted); margin-top: 0.2rem; }
+    .flow-step.highlight {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .flow-step.highlight .fs-main { color: var(--accent); }
+    .flow-step.db-step {
+      border-color: var(--db);
+      background: var(--db-soft);
+    }
+    .flow-step.db-step .fs-main { color: var(--db); }
+    .flow-arrow {
+      font-size: 1.2rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* ── フェーズロードマップ ─────────────────── */
+    .phase-flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .phase-box {
+      flex: 1;
+      min-width: 220px;
+      padding: 1.25rem;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+    }
+    .phase-box .label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.35rem;
+    }
+    .phase-box h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+    .phase-box p  { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+    .phase-box.now    { border-color: var(--phase1); background: var(--accent-soft); }
+    .phase-box.now    .label { color: var(--phase1); }
+    .phase-box.next   { border-color: var(--phase2); background: var(--warn-soft); }
+    .phase-box.next   .label { color: var(--phase2); }
+    .phase-box.future { border-color: var(--phase3); background: var(--db-soft); }
+    .phase-box.future .label { color: var(--phase3); }
+    .arrow-between {
+      display: flex;
+      align-items: center;
+      font-size: 1.5rem;
+      color: var(--muted);
+    }
+
+    /* ── ピッチ ──────────────────────────────── */
+    .pitch {
+      padding: 1.25rem;
+      background: var(--ok-soft);
+      border: 1px solid #a7f3d0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      line-height: 1.75;
+    }
+    .ask {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 2px dashed var(--accent);
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--accent);
+      font-size: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <header>
+      <h1>何を・どこに保存するか</h1>
+      <p class="sub">開発管理課タスク状況管理 — グループセッション事前整理（2026-06-14）</p>
+      <div class="badge-row">
+        <span class="badge">データ設計</span>
+        <span class="badge">3択（Markdown / JSON / DB）</span>
+        <span class="badge">フェーズ設計</span>
+        <span class="badge">ハーネスエンジニアリング</span>
+      </div>
+    </header>
+
+    <!-- 1. 3択の整理 -->
+    <section>
+      <h2>1. 講義の3択 × このツール</h2>
+      <div class="three-grid">
+        <div class="format-card md">
+          <div class="fc-header">
+            <span class="fc-name">Markdown</span>
+            <span class="fc-badge">使わない</span>
+          </div>
+          <p>人間が読むメモ向き。書き方が揺れてプログラムが扱いにくい。タスク一覧の正本には不向き。</p>
+        </div>
+        <div class="format-card json">
+          <div class="fc-header">
+            <span class="fc-name">JSON</span>
+            <span class="fc-badge">使う（今）</span>
+          </div>
+          <p>members・年度目標の正本。変化が少なくgitで管理できる。AIから近い場所に置けるのがメリット。</p>
+        </div>
+        <div class="format-card db">
+          <div class="fc-header">
+            <span class="fc-name">Database</span>
+            <span class="fc-badge">将来</span>
+          </div>
+          <p>tasksの正本（移行予定）。複数人が同じURLで読み書きするために必要。Neon等のサービスを使う。</p>
+        </div>
+      </div>
+      <div class="evolve-row">
+        <span class="label">Markdown</span>
+        <span class="arrow">→ 覚悟1 →</span>
+        <span class="label">JSON</span>
+        <span class="arrow">→ 覚悟2 →</span>
+        <span class="label">Database</span>
+        <span style="color:var(--muted);font-size:0.75rem;margin-left:0.25rem">進むほど強力だが、考えることも増える</span>
+      </div>
+    </section>
+
+    <!-- 2. データ別 保存先 -->
+    <section>
+      <h2>2. データ別 保存先一覧</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>データ</th>
+            <th>変化頻度</th>
+            <th>保存先</th>
+            <th>理由</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-tasks">
+            <td><strong>tasks</strong>（タスク一覧）</td>
+            <td>週次以上</td>
+            <td><span class="tag tag-db">Database</span></td>
+            <td>変わり続ける + 将来、課員も書き込む</td>
+          </tr>
+          <tr>
+            <td>members（課員名簿）</td>
+            <td>数か月に1回</td>
+            <td><span class="tag tag-json">JSON</span></td>
+            <td>変化が少ない。AIから近い場所に置く</td>
+          </tr>
+          <tr>
+            <td>年度目標カテゴリ</td>
+            <td>年に1回</td>
+            <td><span class="tag tag-json">JSON</span></td>
+            <td>同上。Cursorで直編集・commitで反映</td>
+          </tr>
+          <tr>
+            <td>ワークスペース名</td>
+            <td>ほぼ変わらない</td>
+            <td><span class="tag tag-json">JSON</span></td>
+            <td>設定値。触る頻度ほぼゼロ</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:0.75rem;">
+        ポイント：「週次で変わるかどうか」が JSON と DB の分岐点。変わらないものは JSON のまま git 管理でシンプルに保つ。
+      </p>
+    </section>
+
+    <!-- 3. 将来のデータフロー -->
+    <section>
+      <h2>3. 将来のデータフロー（Phase 3 — ハーネスエンジニアリング）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">
+        進捗会議の音声をインプットに、AIが候補を生成。課長が承認するだけでDBに入る。<br />
+        「AI が走る、でも暴走させない」── 精度を保つために承認ステップを挟む。
+      </p>
+      <div class="flow-diagram">
+        <div class="flow-step">
+          <div class="fs-main">進捗会議<br>の音声</div>
+          <div class="fs-sub">インプット</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="fs-main">AI<br>文字起こし</div>
+          <div class="fs-sub">自動処理</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="fs-main">タスク候補<br>を表示</div>
+          <div class="fs-sub">このアプリ</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step highlight">
+          <div class="fs-main">課長が<br>承認</div>
+          <div class="fs-sub">1クリック</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step db-step">
+          <div class="fs-main">DB<br>に保存</div>
+          <div class="fs-sub">Database</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="fs-main">課員が<br>閲覧・更新</div>
+          <div class="fs-sub">同じURL</div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:0.75rem;text-align:center;">
+        ★ 課長が全部手入力では運用が続かない → AI が下書き、課長は承認するだけ
+      </p>
+    </section>
+
+    <!-- 4. フェーズロードマップ -->
+    <section>
+      <h2>4. フェーズロードマップ</h2>
+      <div class="phase-flow">
+        <div class="phase-box now">
+          <div class="label">Phase 1 — 今</div>
+          <h3>課長が集約</h3>
+          <p>
+            保存先: <strong>JSON + localStorage</strong><br />
+            課長がアプリで編集 → export → tasks.json更新 → commit → deploy<br />
+            課員はVercel URLで閲覧のみ（会社PCからもアクセス可）
+          </p>
+        </div>
+        <div class="arrow-between">→</div>
+        <div class="phase-box next">
+          <div class="label">Phase 2 — 次</div>
+          <h3>課員も閲覧・更新</h3>
+          <p>
+            保存先: <strong>Database（Neon等）</strong><br />
+            tasksをDBに移行。課員が同じURLでリアルタイムに最新状態を確認。課員も自分のタスクを更新できる。
+          </p>
+        </div>
+        <div class="arrow-between">→</div>
+        <div class="phase-box future">
+          <div class="label">Phase 3 — 将来</div>
+          <h3>音声 → AI → 承認</h3>
+          <p>
+            保存先: <strong>Database</strong><br />
+            進捗会議の音声をAIが構造化。課長が承認ボタンを押すだけでDBに保存。ハーネスエンジニアリングの実践。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. グループセッションで話すこと -->
+    <section>
+      <h2>5. グループセッションで話すこと</h2>
+      <h3>30秒ピッチ（そのまま話せる）</h3>
+      <div class="pitch">
+        このツールのデータは4種類あります。<strong>週次で変わる tasks だけ将来 Database に入れて</strong>、
+        滅多に変わらない課員名簿と年度目標は <strong>JSON のまま git 管理</strong>します。<br /><br />
+        将来は進捗会議の音声を AI が構造化して候補を出し、
+        <strong>課長が承認ボタンを押すだけで DB に入る</strong>仕組みを目指します。
+        これが講義で習ったハーネスエンジニアリングの実践です。
+      </div>
+      <div class="ask">
+        「変わる頻度で保存先を分ける」という考え方、みなさんのツールでも応用できそうですか？
+      </div>
+      <h3>補足：今すぐできること</h3>
+      <p style="font-size:0.85rem;color:var(--muted);">
+        Phase 1 として、エクスポート機能を実装 → tasks.json を更新 → commit → deploy → 課員に URL を共有する。
+        DB がなくても「読む」習慣を先に作れる。
+      </p>
+    </section>
+
+    <footer>
+      根拠ドキュメント: dev-mgmt-task-board/docs/grill-product-brief.md ·
+      デモ: <a href="https://dev-mgmt-task-board.vercel.app/" style="color:var(--accent);">dev-mgmt-task-board.vercel.app</a>
+    </footer>
+
+  </div>
+</body>
+</html>

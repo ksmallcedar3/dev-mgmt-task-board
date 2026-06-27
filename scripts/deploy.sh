@@ -1,9 +1,10 @@
 #!/bin/bash
 # dev-mgmt-task-board / Surge デプロイスクリプト
 # 使い方:
-#   ./scripts/deploy.sh                          # docs/mockup-ideal.html を既定スラッグで公開
-#   ./scripts/deploy.sh docs/mockup-ideal.html   # ファイル指定
-#   ./scripts/deploy.sh docs/foo.html my-slug    # ファイル + スラッグ指定
+#   ./scripts/deploy.sh                                        # docs/mockup-ideal.html を既定スラッグで公開
+#   ./scripts/deploy.sh docs/mockup-ideal.html                 # ファイル指定
+#   ./scripts/deploy.sh docs/presentation-diagram.html my-slug # ファイル + スラッグ指定
+# HTML と同じフォルダの screenshots/ assets/ images/ も自動で同梱する
 set -e
 
 HTML_FILE="${1:-docs/mockup-ideal.html}"
@@ -23,11 +24,19 @@ if [ ! -f "$HTML_FILE" ]; then
   echo -e "${RED}エラー: $HTML_FILE が見つかりません${NC}" >&2; exit 1
 fi
 
-# 一時ディレクトリに index.html としてコピー
+# 一時ディレクトリに index.html としてコピー（同梱アセットも含める）
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 cp "$HTML_FILE" "$TEMP_DIR/index.html"
 printf "User-agent: *\nDisallow: /\n" > "$TEMP_DIR/robots.txt"
+
+HTML_DIR=$(cd "$(dirname "$HTML_FILE")" && pwd)
+for ASSET_DIR in screenshots assets images; do
+  if [ -d "${HTML_DIR}/${ASSET_DIR}" ]; then
+    cp -R "${HTML_DIR}/${ASSET_DIR}" "$TEMP_DIR/${ASSET_DIR}"
+    echo -e "${GREEN}同梱: ${ASSET_DIR}/${NC}"
+  fi
+done
 
 echo -e "${YELLOW}Surge にアップロード中: https://${DOMAIN}${NC}"
 npx --yes surge "$TEMP_DIR" --domain "$DOMAIN"

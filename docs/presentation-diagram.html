@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>開発管理課タスク状況管理 — 講義用図解（たたき）</title>
+  <style>
+    :root {
+      --bg: #f5f3ee;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #5c6370;
+      --border: #e2dfd6;
+      --accent: #1a1a38;
+      --gold: #c9a84c;
+      --gold-soft: #faf6ea;
+      --warn: #b91c1c;
+      --warn-soft: #fef2f2;
+      --ok: #047857;
+      --ok-soft: #ecfdf5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      padding: 2rem 1.25rem 4rem;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+      margin-bottom: 2rem;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #111125 0%, #1a1a38 60%, #252550 100%);
+      color: #f5f0e0;
+    }
+    .hero .eyebrow {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 800;
+      line-height: 1.35;
+      margin-bottom: 0.75rem;
+    }
+    .hero .tagline {
+      font-size: 0.95rem;
+      color: #c8c0a8;
+      max-width: 36em;
+      margin: 0 auto;
+    }
+    .hero-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 1.25rem;
+    }
+    .pill {
+      font-size: 0.72rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(201,168,76,0.35);
+      color: var(--gold);
+      background: rgba(201,168,76,0.08);
+    }
+
+    /* Section */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      margin-bottom: 0.35rem;
+    }
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    section h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+    section .section-lead {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+    }
+    .highlight-box {
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      background: var(--gold-soft);
+      border-left: 4px solid var(--gold);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Screenshot placeholder */
+    .screenshot-wrap {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #faf8f4;
+      margin: 1rem 0;
+    }
+    .screenshot-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .screenshot-placeholder {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .screenshot-placeholder strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    /* 4 panes */
+    .panes {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+    @media (max-width: 720px) { .panes { grid-template-columns: 1fr 1fr; } }
+    .pane {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      background: var(--bg);
+    }
+    .pane-num { font-weight: 800; color: var(--gold); font-size: 0.65rem; margin-bottom: 0.3rem; }
+    .pane-title { font-weight: 700; margin-bottom: 0.25rem; }
+    .pane-desc { color: var(--muted); line-height: 1.45; }
+
+    /* Problem cards */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .problem-card {
+      padding: 1.1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .problem-card.priority {
+      border-color: #fca5a5;
+      background: var(--warn-soft);
+    }
+    .problem-card .num {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--gold);
+      margin-bottom: 0.25rem;
+    }
+    .problem-card h3 { font-size: 0.95rem; margin-bottom: 0.35rem; }
+    .problem-card p { font-size: 0.82rem; color: var(--muted); }
+
+    /* Mapping */
+    .mapping {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+    .mapping-item {
+      padding: 0.85rem;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .mapping-item strong { display: block; margin-bottom: 0.2rem; }
+
+    /* Ingenuity */
+    .ingenuity-list { display: flex; flex-direction: column; gap: 1.25rem; }
+    .ingenuity-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    .ingenuity-num {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #111125, #1a1a38);
+      color: var(--gold);
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .ingenuity-item h3 { font-size: 0.95rem; margin-bottom: 0.35rem; }
+    .ingenuity-item p { font-size: 0.85rem; color: var(--muted); }
+    .ingenuity-item .effect {
+      margin-top: 0.5rem;
+      font-size: 0.82rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--ok-soft);
+      border-radius: 6px;
+      color: var(--ok);
+      font-weight: 600;
+    }
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 0.8rem;
+    }
+    @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+    .compare .bad {
+      padding: 0.6rem;
+      border-radius: 6px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+    .compare .good {
+      padding: 0.6rem;
+      border-radius: 6px;
+      background: var(--ok-soft);
+      border: 1px solid #a7f3d0;
+      color: var(--ok);
+    }
+
+    /* Struggle */
+    .struggle-list { display: flex; flex-direction: column; gap: 1rem; }
+    .struggle-item {
+      padding: 1.1rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+    .struggle-item h3 { font-size: 0.92rem; margin-bottom: 0.4rem; }
+    .struggle-item p { font-size: 0.84rem; color: var(--muted); }
+    .struggle-item .conclusion {
+      margin-top: 0.6rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* Reflection */
+    .reflection-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.75rem;
+    }
+    .reflection-card {
+      padding: 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .reflection-card h3 {
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+      color: var(--muted);
+    }
+    .reflection-card ul {
+      padding-left: 1.1rem;
+      font-size: 0.84rem;
+      color: var(--text);
+    }
+    .reflection-card li { margin-bottom: 0.35rem; }
+
+    footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- ===== ヒーロー ===== -->
+    <header class="hero">
+      <p class="eyebrow">AI-Driven School / 月次課題</p>
+      <h1>開発管理課タスク状況管理</h1>
+      <p class="tagline">
+        4ペインで「誰が・何を・いつまで」を1画面に並べ、<br />
+        課長が作業を振る前に<strong>負荷と抜け</strong>を見える化するツール
+      </p>
+      <div class="hero-pills">
+        <span class="pill">課長視点</span>
+        <span class="pill">4ペイン</span>
+        <span class="pill">目標ビュー / 課員ビュー</span>
+        <span class="pill">Next.js + shadcn/ui</span>
+      </div>
+    </header>
+
+  <p style="text-align:center;font-size:0.85rem;color:var(--muted);margin:-1rem 0 1.5rem;">
+    このページで紹介する <strong>4つのこと</strong> — 画面・課題・工夫・苦戦
+  </p>
+
+    <!-- ===== SECTION 1: 画面のキャプチャ ===== -->
+    <section id="section-1">
+      <p class="section-label">SECTION 1</p>
+      <h2>どんな画面にしたか</h2>
+      <p class="section-lead">
+        起動すると、左から右へ「ざっくり → くわしく」になる4ペインのワークスペースが立ち上がります。
+      </p>
+
+      <div class="screenshot-wrap">
+        <img
+          src="screenshots/main-goal-view.png"
+          alt="開発管理課タスク状況管理 — 目標ビュー（4ペイン全体）"
+        />
+      </div>
+      <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin:0.35rem 0 1rem;">
+        起動直後の画面 — 目標ビュー（ヘッダー統計・未割当バナー・4ペイン）
+      </p>
+
+      <div class="screenshot-wrap">
+        <img
+          src="screenshots/main-member-view.png"
+          alt="開発管理課タスク状況管理 — 課員ビュー"
+        />
+      </div>
+      <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin:0.35rem 0 0;">
+        課員ビュー — Pane 1 で担当者を選び、Pane 2 にその人のタスクだけ表示
+      </p>
+
+      <div class="panes">
+        <div class="pane">
+          <div class="pane-num">PANE 1</div>
+          <div class="pane-title">年度目標 / 課員</div>
+          <div class="pane-desc">目標ビュー：品質向上・人財育成など。課員ビュー：担当者別に切替。</div>
+        </div>
+        <div class="pane">
+          <div class="pane-num">PANE 2</div>
+          <div class="pane-title">タスク一覧</div>
+          <div class="pane-desc">未着手/進行中/保留/完了。行に担当名＋未割当バッジ。</div>
+        </div>
+        <div class="pane">
+          <div class="pane-num">PANE 3</div>
+          <div class="pane-title">状況＋次の一手</div>
+          <div class="pane-desc">担当・期日・ステータス。「次の一手」はここだけが公式。</div>
+        </div>
+        <div class="pane">
+          <div class="pane-num">PANE 4</div>
+          <div class="pane-title">備考のみ</div>
+          <div class="pane-desc">時系列メモ。次の一手は書かない（将来：会議音声の受け皿候補）。</div>
+        </div>
+      </div>
+
+      <p style="font-size:0.85rem;color:var(--muted);margin-top:0.75rem;">
+        ヘッダーには未割当・進行中・アラート・完了の件数があり、クリックでフィルタできます。
+      </p>
+    </section>
+
+    <!-- ===== SECTION 2: 解決する課題 ===== -->
+    <section id="section-2">
+      <p class="section-label">SECTION 2</p>
+      <h2>何を解決するか</h2>
+      <p class="section-lead">
+        4月着任の課長として、課員の作業が見えず不安だった——その状況から始まりました。
+      </p>
+
+      <div class="highlight-box">
+        このツールが解こうとしているのは<br />
+        <strong>「誰が・今・何を・どのくらい抱えているか」</strong>を、作業配分の前に把握すること
+      </div>
+
+      <div class="problem-grid">
+        <div class="problem-card priority">
+          <div class="num">最優先</div>
+          <h3>負荷が見えない</h3>
+          <p>作業を振ろうとして「手がいっぱいです」と断られた。誰に頼めるか判断できない。</p>
+        </div>
+        <div class="problem-card">
+          <div class="num">課題 ②</div>
+          <h3>目標と日々の作業がつながらない</h3>
+          <p>年度目標はあるが、日々のタスクが目標達成に結びついているか不明。</p>
+        </div>
+        <div class="problem-card">
+          <div class="num">課題 ③</div>
+          <h3>担当なしの抜け</h3>
+          <p>誰も抱えていないタスクが埋もれる。未割当を赤バナーで常に見せる。</p>
+        </div>
+      </div>
+
+      <h3 style="font-size:0.9rem;margin:1.25rem 0 0.5rem;color:var(--muted);">3つの視点をペインに割り当てる</h3>
+      <div class="mapping">
+        <div class="mapping-item">
+          <strong>全体を見る</strong>
+          Pane 1（目標）→ Pane 2（一覧）で、テーマ別・人別の全体像
+        </div>
+        <div class="mapping-item">
+          <strong>1件を深く見る</strong>
+          Pane 3 で状況・次の一手・担当・期日をまとめて確認
+        </div>
+        <div class="mapping-item">
+          <strong>メモを残す</strong>
+          Pane 4 で備考だけ。公式の「次の一手」と役割を分離
+        </div>
+      </div>
+
+      <p style="font-size:0.85rem;margin-top:1rem;color:var(--muted);">
+        <strong>Phase 1</strong> は課長が自分で入力・整理して型を固める段階。
+        空欄は「まだ把握できていない箇所」として意味がある。
+      </p>
+    </section>
+
+    <!-- ===== SECTION 3: 工夫したポイント ===== -->
+    <section id="section-3">
+      <p class="section-label">SECTION 3</p>
+      <h2>工夫したポイント</h2>
+      <p class="section-lead">
+        便利機能を足すより、<strong>迷いどころを1つずつ消す</strong>方向に寄せました。
+      </p>
+
+      <div class="ingenuity-list">
+
+        <div class="ingenuity-item">
+          <div class="ingenuity-num">①</div>
+          <div>
+            <h3>Pane 1 は「年度目標」、担当は行に書く</h3>
+            <p>
+              グリルで「Pane 1＝課員名」案は却下。目標達成への貢献が見えなくなるため。
+              担当者名は Pane 2 の各行に常時表示。課員ビューは Phase 1 の拡張として追加。
+            </p>
+            <div class="effect">効果：「この作業はどの目標のためか」と「誰がやるか」が混ざらない</div>
+          </div>
+        </div>
+
+        <div class="ingenuity-item">
+          <div class="ingenuity-num">②</div>
+          <div>
+            <h3>「次の一手」は Pane 3 だけ。Pane 4 は備考専用</h3>
+            <p>
+              公式の次アクションと雑多なメモを分けないと、週次ミーティング前の確認が曖昧になる。
+              将来の会議音声文字起こしは Pane 4 が受け皿候補。
+            </p>
+            <div class="effect">効果：「次に何をするか」が1か所に集約される</div>
+          </div>
+        </div>
+
+        <div class="ingenuity-item">
+          <div class="ingenuity-num">③</div>
+          <div>
+            <h3>ヘッダーのステータスから、対象タスクにすぐ飛べる</h3>
+            <p>
+              ヘッダーに表示している「未割当・進行中・期日警告・完了」の数字をクリックすると、
+              Pane 2 のタスク一覧がその条件だけに絞り込まれる。もう一度クリックで解除。
+              絞り込み中はフィルタバーが表示され、いま何を見ているかが分かる。
+            </p>
+            <div class="effect">効果：数字を見てから一覧を探す往復がなくなる。未割当 2 件なら、クリック1つでその2件だけ表示</div>
+          </div>
+        </div>
+
+        <div class="ingenuity-item">
+          <div class="ingenuity-num">④</div>
+          <div>
+            <h3>未割当を「列」ではなく「バナー＋行バッジ」で見せる</h3>
+            <p>
+              未割当専用列は却下（列が増えて見づらい）。
+              ヘッダー下の赤バナーと、各行の未割当バッジで二重に気づけるようにした。
+            </p>
+            <div class="effect">効果：抜けに気づく導線が画面を開いた瞬間からある</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== SECTION 4: 苦戦したポイント ===== -->
+    <section id="section-4">
+      <p class="section-label">SECTION 4</p>
+      <h2>苦戦したポイント・作ってみた感想</h2>
+      <p class="section-lead">
+        コードを書く時間より、<strong>「何を作らないか」を決める</strong>時間のほうが長かった。
+      </p>
+
+      <div class="struggle-list">
+
+        <div class="struggle-item">
+          <h3>苦戦① グリルで Pane の役割を決め切る</h3>
+          <p>
+            Pane 1 を課員名にするか、年度目標にするか。Pane 3 と 4 を分けるか。
+            毎回「便利そう」な案が出るが、4ペインの一方向の流れが弱まる。
+          </p>
+          <p class="conclusion">→ 結論：目標＝Pane 1、次の一手＝Pane 3 公式、備考＝Pane 4 のみ。ぶれ防止メモを残した。</p>
+        </div>
+
+        <div class="struggle-item">
+          <h3>苦戦② モックアップと実装の見た目を1つずつ揃える</h3>
+          <p>
+            最初に作った HTML モック（mockup-ideal.html）と、Next.js で動く画面の見た目がずれていた。
+            ダークヘッダー、選択時のゴールド、未割当バナー、フィルタ…と、気づいた差分を1項目ずつ直した。
+          </p>
+          <p class="conclusion">→ 結論：「理想の画面」を先に作っておくと、実装で何が足りないか比較しやすかった。</p>
+        </div>
+
+        <div class="struggle-item">
+          <h3>苦戦③ デプロイが何度も失敗した（Vercel × GitHub）</h3>
+          <p>
+            本番公開でつまずきが続いた。コミット作者名の不一致、非公開リポジトリの制限、
+            GitHub Actions の設定ミス、デプロイが途中で止まる…と、原因を1つずつ潰していった。
+          </p>
+          <p class="conclusion">→ 結論：リポジトリ公開・作者名統一・GitHub Actions 導入でようやく安定。画面作りとは別の学びだった。</p>
+        </div>
+
+      </div>
+
+      <h3 style="font-size:0.9rem;margin:1.5rem 0 0.75rem;color:var(--muted);">作ってみた感想（発表用メモ）</h3>
+      <div class="reflection-grid">
+        <div class="reflection-card">
+          <h3>面倒だったこと</h3>
+          <ul>
+            <li>グリルで「何を作らないか」を決めるのに時間がかかった</li>
+            <li>モックと実装の見た目の差分を1つずつ確認する作業</li>
+            <li>デプロイ失敗の原因調査（何度もトライした）</li>
+          </ul>
+        </div>
+        <div class="reflection-card">
+          <h3>もっとやりたかったこと</h3>
+          <ul>
+            <li>Phase 2：課員が自分で更新する運用</li>
+            <li>課進捗会議の音声 → タスク自動反映</li>
+            <li>ブラウザをまたいだデータ共有（DB / スプレッドシート連携）</li>
+            <li>負荷の偏りを自動で可視化</li>
+          </ul>
+        </div>
+        <div class="reflection-card">
+          <h3>できてよかったこと</h3>
+          <ul>
+            <li>グリルで決めた型が画面にそのまま載った</li>
+            <li>目標ビュー / 課員ビューの切り替え</li>
+            <li>本番 URL で実際に触れる状態になった</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      AI-Driven School / 月次課題 — 開発管理課タスク状況管理 講義用図解（たたき）<br />
+      参考例：<a href="https://ads-personal-workspace-example.surge.sh/" target="_blank" rel="noopener">採用管理ツール 図解例</a>
+    </footer>
+
+  </div>
+</body>
+</html>
