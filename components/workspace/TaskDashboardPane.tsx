@@ -174,7 +174,7 @@ export function TaskDashboardPane({
             <CardContent className="flex flex-col gap-3 pt-0">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs text-muted-foreground">担当者</Label>
-                <InlineTextareaField
+                <InlineTextField
                   ariaLabel="担当者"
                   value={assignee}
                   onSave={onUpdateAssignee}
