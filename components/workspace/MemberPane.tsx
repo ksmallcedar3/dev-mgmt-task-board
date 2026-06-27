@@ -40,12 +40,11 @@ export function MemberPane({
       <button
         type="button"
         onClick={() => onSelectMember(member.id)}
+        style={isSelected ? { background: "linear-gradient(135deg,#0d0d1a,#1c1a30)", color: "#e8d9a8" } : undefined}
         className={cn(
           "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors",
           "outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-          isSelected
-            ? "bg-accent text-accent-foreground font-medium"
-            : "text-foreground hover:bg-muted",
+          isSelected ? "font-medium" : "text-foreground hover:bg-muted",
         )}
       >
         {/* アバター（名前の頭文字） */}
@@ -73,7 +72,7 @@ export function MemberPane({
               {alert}
             </span>
           )}
-          <span className="text-xs text-muted-foreground">{count}</span>
+          <span className={cn("text-xs", isSelected ? "text-[#c9a84c]" : "text-muted-foreground")}>{count}</span>
         </div>
       </button>
     );
@@ -97,7 +96,7 @@ export function MemberPane({
             {externalMembers.length > 0 && (
               <>
                 <p className="mt-2 px-2.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  課外協力者
+                  システム企画部（大阪）
                 </p>
                 {externalMembers.map((m) => (
                   <MemberButton key={m.id} member={m} />

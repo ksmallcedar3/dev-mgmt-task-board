@@ -5,6 +5,7 @@ import {
   Archive,
   ArchiveRestore,
   ChevronDown,
+  Filter,
   Plus,
 } from "lucide-react";
 import {
@@ -52,6 +53,7 @@ const screenReaderInstructions: ScreenReaderInstructions = {
 
 type TaskListPaneProps = {
   categoryTitle: string;
+  isFiltered?: boolean;
   groups: TaskGroup[];
   selectedTaskId: string;
   onSelectTask: (id: string) => void;
@@ -63,6 +65,7 @@ type TaskListPaneProps = {
 
 export function TaskListPane({
   categoryTitle,
+  isFiltered = false,
   groups,
   selectedTaskId,
   onSelectTask,
@@ -87,9 +90,9 @@ export function TaskListPane({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const statusGroups = groups.filter(
-    (g): g is Extract<TaskGroup, { kind: "status" }> => g.kind === "status",
-  );
+  const statusGroups = groups
+    .filter((g): g is Extract<TaskGroup, { kind: "status" }> => g.kind === "status")
+    .filter((g) => !isFiltered || g.items.length > 0);
   const archivedGroup = groups.find(
     (g): g is Extract<TaskGroup, { kind: "archived" }> => g.kind === "archived",
   );
@@ -180,9 +183,12 @@ export function TaskListPane({
   };
 
   return (
-    <section className="flex w-[280px] shrink-0 flex-col border-r border-border bg-background">
-      <header className="flex h-12 shrink-0 items-center border-b border-border px-3">
-        <h2 className="truncate text-sm font-semibold text-foreground">
+    <section className="flex h-full w-full flex-col border-r border-border bg-background">
+      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-3">
+        {isFiltered && (
+          <Filter className="size-3.5 shrink-0 text-amber-500" aria-hidden />
+        )}
+        <h2 className={cn("truncate text-sm font-semibold", isFiltered ? "text-amber-500" : "text-foreground")}>
           {categoryTitle}
         </h2>
       </header>

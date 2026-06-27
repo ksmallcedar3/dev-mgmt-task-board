@@ -116,15 +116,20 @@ export function SortableTaskRow({
             )}
             {/* 期日バッジ */}
             {(() => {
-              const days = daysUntil(task.dueDate);
-              if (days === null) return null;
-              if (days < 0)
-                return <span className="ml-auto shrink-0 font-medium text-destructive">期限超過</span>;
-              if (days <= 7)
-                return <span className="ml-auto shrink-0 font-medium text-destructive">{days}日後</span>;
-              if (days <= 14)
-                return <span className="ml-auto shrink-0 text-amber-600">{days}日後</span>;
-              return <span className={cn("ml-auto shrink-0", selected ? "text-[#a09880]" : "text-muted-foreground")}>{task.dueDate}</span>;
+              const dueDays = daysUntil(task.dueDate);
+              const startDays = daysUntil(task.startDate);
+
+              if (dueDays !== null && dueDays < 0)
+                return <span className="ml-auto shrink-0 font-medium text-destructive">終了超過</span>;
+              if (startDays !== null && startDays < 0 && task.status === "todo")
+                return <span className="ml-auto shrink-0 font-medium text-amber-600">開始超過</span>;
+              if (dueDays !== null && dueDays <= 7)
+                return <span className="ml-auto shrink-0 font-medium text-destructive">{dueDays}日後</span>;
+              if (dueDays !== null && dueDays <= 14)
+                return <span className="ml-auto shrink-0 text-amber-600">{dueDays}日後</span>;
+              if (dueDays !== null)
+                return <span className={cn("ml-auto shrink-0", selected ? "text-[#a09880]" : "text-muted-foreground")}>{task.dueDate}</span>;
+              return null;
             })()}
           </div>
         </div>

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { InlineTextareaField, SectionLabel } from "@/components/primitives";
+import { InlineTextareaField, InlineTextField, SectionLabel } from "@/components/primitives";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import { useState, useEffect, useCallback } from "react";
 
 type TaskDashboardPaneProps = {
   task: Task | null;
+  onUpdateTitle: (title: string) => void;
   onUpdateStatus: (status: TaskStatus) => void;
   onUpdateNextAction: (nextAction: string) => void;
   onUpdateAssignee: (assignee: string) => void;
@@ -44,6 +45,7 @@ type TaskDashboardPaneProps = {
 
 export function TaskDashboardPane({
   task,
+  onUpdateTitle,
   onUpdateStatus,
   onUpdateNextAction,
   onUpdateAssignee,
@@ -106,7 +108,7 @@ export function TaskDashboardPane({
 
   if (!task) {
     return (
-      <section className="flex min-w-0 flex-1 flex-col border-r border-border bg-muted/10">
+      <section className="flex h-full w-full flex-col border-r border-border bg-muted/10">
         <div className="flex min-h-0 flex-1 items-center justify-center px-6">
           <p className="text-center text-sm text-muted-foreground">
             左のリストからタスクを選択してください。
@@ -119,13 +121,17 @@ export function TaskDashboardPane({
   const justSaved = savedAt !== null && !isDirty;
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col border-r border-border bg-muted/10">
+    <section className="flex h-full w-full flex-col border-r border-border bg-muted/10">
       <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col gap-4 p-4">
           <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-semibold leading-snug text-foreground">
-              {task.title}
-            </h2>
+            <InlineTextField
+              value={task.title}
+              onSave={onUpdateTitle}
+              ariaLabel="タスク名"
+              placeholder="タスク名を入力"
+              className="h-auto border-transparent bg-transparent px-0 text-lg font-semibold leading-snug text-foreground shadow-none hover:border-input hover:bg-card focus-visible:border-input focus-visible:bg-card"
+            />
             {/* 担当者・期日・優先度バッジ */}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               {task.assignee ? (
@@ -226,7 +232,9 @@ export function TaskDashboardPane({
                     id="task-status-select"
                     className="h-8 w-full bg-card hover:bg-accent/40"
                   >
-                    <SelectValue placeholder="ステータスを選択" />
+                    <SelectValue placeholder="ステータスを選択">
+                      {TASK_STATUS_LABELS[task.status]}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent align="start">
                     {TASK_STATUS_ORDER.map((s) => (

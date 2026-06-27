@@ -5,6 +5,6 @@
   { "id": "m-shoji",     "name": "庄治",   "role": "課員",         "type": "member"   },
   { "id": "m-osuga",     "name": "大須賀", "role": "課員",         "type": "member"   },
   { "id": "m-kakimoto",  "name": "柿本",   "role": "課員",         "type": "member"   },
-  { "id": "m-nakamura",  "name": "中村知", "role": "課長（課外）", "type": "external" },
-  { "id": "m-hirabayashi","name": "平林",  "role": "課長（課外）", "type": "external" }
+  { "id": "m-nakamura",  "name": "中村知", "role": "課長", "type": "external" },
+  { "id": "m-hirabayashi","name": "平林",  "role": "課長", "type": "external" }
 ]
