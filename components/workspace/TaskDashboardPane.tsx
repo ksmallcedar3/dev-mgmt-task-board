@@ -25,10 +25,9 @@ import { Separator } from "@/components/ui/separator";
 import { InlineTextareaField, InlineTextField, SectionLabel } from "@/components/primitives";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
-import { CalendarDays, UserRound, Save, Check, Star, AlertTriangle } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { CalendarDays, UserRound, Star, AlertTriangle } from "lucide-react";
+import { useState, useEffect } from "react";
 
 type TaskDashboardPaneProps = {
   task: Task | null;
@@ -61,7 +60,6 @@ export function TaskDashboardPane({
   const [statusDetail, setStatusDetail] = useState(task?.statusDetail ?? "");
   const [issue, setIssue] = useState(task?.issue ?? "");
   const [nextAction, setNextAction] = useState(task?.nextAction ?? "");
-  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   // タスクが切り替わったときにローカル state を同期
   useEffect(() => {
@@ -71,7 +69,6 @@ export function TaskDashboardPane({
     setStatusDetail(task?.statusDetail ?? "");
     setIssue(task?.issue ?? "");
     setNextAction(task?.nextAction ?? "");
-    setSavedAt(null);
   }, [task?.id]);
 
   // localStorage 復元など外部から値が変わった場合も同期
@@ -81,30 +78,6 @@ export function TaskDashboardPane({
   useEffect(() => { setStatusDetail(task?.statusDetail ?? ""); }, [task?.statusDetail]);
   useEffect(() => { setIssue(task?.issue ?? ""); }, [task?.issue]);
   useEffect(() => { setNextAction(task?.nextAction ?? ""); }, [task?.nextAction]);
-
-  const isDirty =
-    assignee !== (task?.assignee ?? "") ||
-    startDate !== (task?.startDate ?? "") ||
-    dueDate !== (task?.dueDate ?? "") ||
-    statusDetail !== (task?.statusDetail ?? "") ||
-    issue !== (task?.issue ?? "") ||
-    nextAction !== (task?.nextAction ?? "");
-
-  const handleSave = useCallback(() => {
-    if (!task) return;
-    if (assignee !== (task.assignee ?? "")) onUpdateAssignee(assignee);
-    if (startDate !== (task.startDate ?? "")) onUpdateStartDate(startDate);
-    if (dueDate !== (task.dueDate ?? "")) onUpdateDueDate(dueDate);
-    if (statusDetail !== (task.statusDetail ?? "")) onUpdateStatusDetail(statusDetail);
-    if (issue !== (task.issue ?? "")) onUpdateIssue(issue);
-    if (nextAction !== (task.nextAction ?? "")) onUpdateNextAction(nextAction);
-    setSavedAt(Date.now());
-  }, [
-    task,
-    assignee, startDate, dueDate, statusDetail, issue, nextAction,
-    onUpdateAssignee, onUpdateStartDate, onUpdateDueDate,
-    onUpdateStatusDetail, onUpdateIssue, onUpdateNextAction,
-  ]);
 
   if (!task) {
     return (
@@ -117,8 +90,6 @@ export function TaskDashboardPane({
       </section>
     );
   }
-
-  const justSaved = savedAt !== null && !isDirty;
 
   return (
     <section className="flex h-full w-full flex-col border-r border-border bg-muted/10">
@@ -352,24 +323,6 @@ export function TaskDashboardPane({
             )}
           </div>
 
-          {/* 保存ボタン */}
-          <div className="flex items-center justify-end gap-2 pt-1 pb-2">
-            {justSaved && (
-              <span className="flex items-center gap-1 text-xs text-emerald-600">
-                <Check className="size-3" />
-                保存済み
-              </span>
-            )}
-            <Button
-              size="sm"
-              disabled={!isDirty}
-              onClick={handleSave}
-              className="gap-1.5"
-            >
-              <Save className="size-3.5" />
-              保存
-            </Button>
-          </div>
         </div>
       </ScrollArea>
     </section>
