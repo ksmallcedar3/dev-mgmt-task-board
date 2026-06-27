@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Toggle } from "@/components/ui/toggle";
 import { CalendarDays, UserRound, Star, AlertTriangle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 type TaskDashboardPaneProps = {
   task: Task | null;
@@ -60,8 +60,9 @@ export function TaskDashboardPane({
   const [statusDetail, setStatusDetail] = useState(task?.statusDetail ?? "");
   const [issue, setIssue] = useState(task?.issue ?? "");
   const [nextAction, setNextAction] = useState(task?.nextAction ?? "");
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // タスクが切り替わったときにローカル state を同期
+  // タスクが切り替わったときにローカル state を同期 & スクロール先頭へ
   useEffect(() => {
     setAssignee(task?.assignee ?? "");
     setStartDate(task?.startDate ?? "");
@@ -69,6 +70,9 @@ export function TaskDashboardPane({
     setStatusDetail(task?.statusDetail ?? "");
     setIssue(task?.issue ?? "");
     setNextAction(task?.nextAction ?? "");
+    scrollRef.current
+      ?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]')
+      ?.scrollTo({ top: 0 });
   }, [task?.id]);
 
   // localStorage 復元など外部から値が変わった場合も同期
@@ -93,7 +97,7 @@ export function TaskDashboardPane({
 
   return (
     <section className="flex h-full w-full flex-col border-r border-border bg-muted/10">
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollArea ref={scrollRef} className="min-h-0 flex-1">
         <div className="flex flex-col gap-4 p-4">
           <div className="flex flex-col gap-1">
             <InlineTextField
