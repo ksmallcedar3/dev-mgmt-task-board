@@ -100,8 +100,11 @@ export type SelectedDetail = { type: "notes" } | null;
 export type TaskRow = {
   id: string;
   title: string;
+  status: TaskStatus;
   /** 担当者名。空文字 or undefined = 未割当 */
   assignee?: string;
+  /** 開始期日。"YYYY-MM-DD" 形式 */
+  startDate?: string;
   /** 終了期日。"YYYY-MM-DD" 形式 */
   dueDate?: string;
   /** 重要度フラグ。true = ★ 表示 */

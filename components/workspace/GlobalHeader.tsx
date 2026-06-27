@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Download, Loader2, Settings, Target, Upload, Users, UserX } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, Loader2, Settings, Target, Upload, Users, UserX, X } from "lucide-react";
 
 import { type Department } from "@/lib/schema";
 import { type ViewMode } from "@/components/workspace/Workspace";
@@ -121,10 +121,13 @@ export function GlobalHeader({
                   <TooltipTrigger
                     onClick={() => onFilterChange(key)}
                     className={cn(
-                      "cursor-pointer rounded-lg border-2 px-2 py-1 text-center transition-all hover:border-[rgba(201,168,76,0.4)]",
+                      "relative cursor-pointer rounded-lg border-2 px-2 py-1 text-center transition-all hover:border-[rgba(201,168,76,0.4)]",
                       isActive ? "border-[#c9a84c] bg-[rgba(201,168,76,0.08)]" : "border-transparent",
                     )}
                   >
+                    {isActive && (
+                      <X className="absolute right-0.5 top-0.5 size-2.5" style={{ color: "#c9a84c" }} aria-hidden />
+                    )}
                     <div className="text-xl font-black leading-none" style={{ color }}>
                       {value}
                     </div>
@@ -132,7 +135,9 @@ export function GlobalHeader({
                       {label}
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">{tooltip}</TooltipContent>
+                  <TooltipContent side="bottom">
+                    {isActive ? "クリックで絞り込みを解除" : tooltip}
+                  </TooltipContent>
                 </Tooltip>
               );
             })}

@@ -3,13 +3,18 @@
 /**
  * Workspace: タスク管理 4 ペイン。
  * Pane 1 カテゴリー → Pane 2 ステータス別タスク → Pane 3 状況・次の一手 → Pane 4 備考。
+ * データの永続化は Neon DB（/api/tasks）が担う。
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { tasksFileSchema } from "@/lib/schema";
 
-/** localStorage に保存する形式: { updatedAt, tasks } */
-const STORAGE_KEY = "dev-mgmt-task-board:tasks:v2";
+/** 選択中タスク ID を Cookie に保存するキー（SSR で読み取りフラッシュを防ぐ） */
+const SELECTED_TASK_COOKIE = "dmtb_selectedTaskId";
+
+function saveSelectedTaskCookie(id: string) {
+  document.cookie = `${SELECTED_TASK_COOKIE}=${id};path=/;max-age=86400;SameSite=Lax`;
+}
 
 import {
   type Task,
@@ -28,6 +33,7 @@ import { MemberPane } from "@/components/workspace/MemberPane";
 import { TaskListPane } from "@/components/workspace/TaskListPane";
 import { TaskDashboardPane } from "@/components/workspace/TaskDashboardPane";
 import { TaskNotesPane } from "@/components/workspace/TaskNotesPane";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 export type ViewMode = "goal" | "member";
 
@@ -49,100 +55,48 @@ function defaultPositionId(departments: Department[]): string {
 type WorkspaceProps = {
   initialDepartments: Department[];
   initialTasks: Task[];
-  /** tasks.json の updatedAt（デプロイ時のタイムスタンプ）。自動同期の比較に使う */
-  serverUpdatedAt: string;
+  /** Cookie から復元した前回選択タスク ID（サーバー側で読み取り、フラッシュ防止） */
+  initialSelectedTaskId?: string;
   initialMembers: Member[];
   workspace: { name: string; icon: string };
 };
 
+// ===== API ヘルパー（fire-and-forget。楽観的更新と組み合わせる） =====
+
+async function apiPatch(id: string, patch: Partial<Task>) {
+  try {
+    await fetch(`/api/tasks/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+  } catch (err) {
+    console.error("[apiPatch]", err);
+  }
+}
+
+async function apiCreate(task: Task) {
+  try {
+    await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(task),
+    });
+  } catch (err) {
+    console.error("[apiCreate]", err);
+  }
+}
+
 export function Workspace({
   initialDepartments,
   initialTasks,
-  serverUpdatedAt,
+  initialSelectedTaskId,
   initialMembers,
   workspace,
 }: WorkspaceProps) {
   const [departments, setDepartments] =
     useState<Department[]>(initialDepartments);
-
-  // サーバーとクライアントで初期値を揃えるため、まず initialTasks で初期化する
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-
-  // マウント後（クライアント側のみ）に localStorage から復元 / 自動同期する
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const result = tasksFileSchema.safeParse(JSON.parse(raw));
-      if (!result.success || result.data.tasks.length === 0) return;
-      // localStorage と tasks.json のどちらが新しいか比較して新しい方を採用
-      const localTs = new Date(result.data.updatedAt).getTime();
-      const serverTs = new Date(serverUpdatedAt).getTime();
-      if (localTs >= serverTs) {
-        setTasks(result.data.tasks);
-      }
-      // serverTs > localTs の場合は initialTasks（サーバー側）をそのまま使う
-    } catch {
-      // 壊れたデータは無視
-    }
-  }, []); // マウント時のみ実行
-
-  // ===== エクスポート =====
-  const handleExport = useCallback(() => {
-    const now = new Date().toISOString();
-    const payload = JSON.stringify({ updatedAt: now, tasks }, null, 2);
-    const blob = new Blob([payload], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const dateStr = now.slice(0, 10).replace(/-/g, "");
-    a.href = url;
-    a.download = `tasks-${dateStr}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [tasks]);
-
-  // ===== インポート =====
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImportClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleImportFile = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const result = tasksFileSchema.safeParse(
-            JSON.parse(ev.target?.result as string),
-          );
-          if (!result.success) {
-            alert(
-              `インポート失敗: JSONの形式が正しくありません。\n${result.error.issues[0]?.message}`,
-            );
-            return;
-          }
-          const { updatedAt, tasks: imported } = result.data;
-          setTasks(imported);
-          try {
-            localStorage.setItem(
-              STORAGE_KEY,
-              JSON.stringify({ updatedAt, tasks: imported }),
-            );
-          } catch {}
-        } catch {
-          alert("インポート失敗: ファイルを読み込めませんでした。");
-        }
-      };
-      reader.readAsText(file);
-      // 同じファイルを再選択できるよう value をリセット
-      e.target.value = "";
-    },
-    [],
-  );
-
 
   // ===== ビューモード =====
   const [viewMode, setViewMode] = useState<ViewMode>("goal");
@@ -157,7 +111,6 @@ export function Workspace({
   }, []);
 
   const firstPos = defaultPositionId(initialDepartments);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(firstPos);
 
   const firstTaskIdInDefaultCat =
     initialTasks.find(
@@ -166,7 +119,16 @@ export function Workspace({
     initialTasks.find((t) => !t.archived)?.id ??
     "";
 
-  const [selectedTaskId, setSelectedTaskId] = useState(firstTaskIdInDefaultCat);
+  // Cookie から復元したタスクが有効なら、そのタスクとカテゴリを初期値にする
+  const restoredTask = initialSelectedTaskId
+    ? initialTasks.find((t) => t.id === initialSelectedTaskId && !t.archived)
+    : null;
+
+  const resolvedInitialTaskId = restoredTask?.id ?? firstTaskIdInDefaultCat;
+  const resolvedInitialCategoryId = restoredTask?.categoryId ?? firstPos;
+
+  const [selectedCategoryId, setSelectedCategoryId] = useState(resolvedInitialCategoryId);
+  const [selectedTaskId, setSelectedTaskId] = useState(resolvedInitialTaskId);
   const [pane4ManuallyClosed, setPane4ManuallyClosed] = useState(false);
 
   const departmentsWithCounts = useMemo(() => {
@@ -185,7 +147,6 @@ export function Workspace({
   const departmentTitle = meta?.departmentTitle ?? "";
   const positionTitle = meta?.positionTitle ?? "";
 
-  /** ヘッダーに表示するサマリ統計（全タスク対象） */
   const stats = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -203,14 +164,10 @@ export function Workspace({
   }, [tasks]);
 
   const tasksInCategory = useMemo(
-    () =>
-      tasks.filter(
-        (t) => t.categoryId === selectedCategoryId && !t.archived,
-      ),
+    () => tasks.filter((t) => t.categoryId === selectedCategoryId && !t.archived),
     [tasks, selectedCategoryId],
   );
 
-  /** 課員ビュー用：選択された課員のタスク */
   const tasksForMember = useMemo(() => {
     if (!selectedMemberId) return [];
     const member = initialMembers.find((m) => m.id === selectedMemberId);
@@ -218,7 +175,6 @@ export function Workspace({
     return tasks.filter((t) => !t.archived && t.assignee === member.name);
   }, [tasks, selectedMemberId, initialMembers]);
 
-  /** 課員ごとのタスク件数・警告件数 */
   const memberTaskCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     const alerts: Record<string, number> = {};
@@ -240,10 +196,8 @@ export function Workspace({
     return { counts, alerts };
   }, [tasks, initialMembers]);
 
-  /** 表示対象タスク（ビューに応じて切り替え） */
   const baseActiveTasks = viewMode === "goal" ? tasksInCategory : tasksForMember;
 
-  /** フィルター適用後のタスク（全タスクから絞り込み） */
   const activeTasks = useMemo(() => {
     if (!activeFilter) return baseActiveTasks;
     const today = new Date();
@@ -264,7 +218,6 @@ export function Workspace({
     });
   }, [activeFilter, baseActiveTasks, tasks]);
 
-  /** カテゴリー内で選択 ID が無効なら先頭タスクを代表表示する（effect で state を直さない） */
   const activeTask = useMemo(() => {
     const picked = activeTasks.find((t) => t.id === selectedTaskId);
     if (picked) return picked;
@@ -281,26 +234,16 @@ export function Workspace({
   const selectTask = useCallback((id: string) => {
     setSelectedTaskId(id);
     setPane4ManuallyClosed(false);
+    saveSelectedTaskCookie(id);
   }, []);
 
-  const saveToStorage = useCallback((tasks: Task[]) => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ updatedAt: new Date().toISOString(), tasks }),
-      );
-    } catch {}
-  }, []);
-
+  // ===== タスク更新（楽観的更新 + API 保存） =====
   const updateTask = useCallback(
     (id: string, patch: Partial<Task>) => {
-      setTasks((prev) => {
-        const next = prev.map((t) => (t.id === id ? { ...t, ...patch } : t));
-        saveToStorage(next);
-        return next;
-      });
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+      apiPatch(id, patch);
     },
-    [saveToStorage],
+    [],
   );
 
   const taskGroups: TaskGroup[] = useMemo(() => {
@@ -314,7 +257,9 @@ export function Workspace({
         .map((t) => ({
           id: t.id,
           title: t.title,
+          status: t.status,
           assignee: t.assignee,
+          startDate: t.startDate,
           dueDate: t.dueDate,
           priority: t.priority,
           hasIssue: !!(t.issue?.trim()),
@@ -325,17 +270,13 @@ export function Workspace({
       viewMode === "goal"
         ? tasks
             .filter((t) => t.archived && t.categoryId === selectedCategoryId)
-            .map((t) => ({ id: t.id, title: t.title, assignee: t.assignee, dueDate: t.dueDate }))
+            .map((t) => ({ id: t.id, title: t.title, status: t.status, assignee: t.assignee, startDate: t.startDate, dueDate: t.dueDate }))
         : [];
 
     if (archivedItems.length === 0) return stageGroups;
     return [
       ...stageGroups,
-      {
-        kind: "archived" as const,
-        label: ARCHIVED_GROUP_LABEL,
-        items: archivedItems,
-      },
+      { kind: "archived" as const, label: ARCHIVED_GROUP_LABEL, items: archivedItems },
     ];
   }, [activeTasks, viewMode, tasks, selectedCategoryId]);
 
@@ -344,34 +285,25 @@ export function Workspace({
       const trimmed = title.trim();
       if (!trimmed) return;
       const newTask = createMinimalTask(selectedCategoryId, trimmed, status);
-      setTasks((prev) => {
-        const next = [...prev, newTask];
-        saveToStorage(next);
-        return next;
-      });
+      setTasks((prev) => [...prev, newTask]);
       setSelectedTaskId(newTask.id);
       setPane4ManuallyClosed(false);
+      apiCreate(newTask);
     },
-    [selectedCategoryId, saveToStorage],
+    [selectedCategoryId],
   );
 
   const archiveTask = useCallback((id: string) => {
-    setTasks((prev) => {
-      const next = prev.map((t) => (t.id === id ? { ...t, archived: true } : t));
-      saveToStorage(next);
-      return next;
-    });
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, archived: true } : t)));
     setSelectedTaskId((prevId) => (prevId === id ? "" : prevId));
     setPane4ManuallyClosed(false);
-  }, [saveToStorage]);
+    apiPatch(id, { archived: true });
+  }, []);
 
   const restoreTask = useCallback((id: string) => {
-    setTasks((prev) => {
-      const next = prev.map((t) => (t.id === id ? { ...t, archived: false } : t));
-      saveToStorage(next);
-      return next;
-    });
-  }, [saveToStorage]);
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, archived: false } : t)));
+    apiPatch(id, { archived: false });
+  }, []);
 
   const moveTask = useCallback(
     (id: string, toStatus: TaskStatus, toIndex: number) => {
@@ -380,7 +312,11 @@ export function Workspace({
         if (subjectIndex < 0) return prev;
         const subject = prev[subjectIndex];
         if (subject.archived) return prev;
-        if (subject.categoryId !== selectedCategoryId) return prev;
+
+        // 目標ビューでは選択カテゴリー内のみ並び替え対象、課員ビューはカテゴリー横断
+        const categoryFilter = viewMode === "goal"
+          ? (t: Task) => !t.archived && t.categoryId === subject.categoryId && t.status === toStatus
+          : (t: Task) => !t.archived && t.status === toStatus;
 
         const without = prev.filter((_, i) => i !== subjectIndex);
         const updated: Task = { ...subject, status: toStatus };
@@ -388,31 +324,71 @@ export function Workspace({
         let count = 0;
         let absInsertAt = without.length;
         for (let i = 0; i < without.length; i++) {
-          const t = without[i];
-          if (
-            !t.archived &&
-            t.categoryId === selectedCategoryId &&
-            t.status === toStatus
-          ) {
-            if (count === toIndex) {
-              absInsertAt = i;
-              break;
-            }
+          if (categoryFilter(without[i])) {
+            if (count === toIndex) { absInsertAt = i; break; }
             count++;
           }
         }
-        const next = [
-          ...without.slice(0, absInsertAt),
-          updated,
-          ...without.slice(absInsertAt),
-        ];
-        saveToStorage(next);
-        return next;
+        return [...without.slice(0, absInsertAt), updated, ...without.slice(absInsertAt)];
       });
+      // ステータス変更のみ DB に保存（並び順は Phase 2 対応）
+      apiPatch(id, { status: toStatus });
     },
-    [selectedCategoryId, saveToStorage],
+    [viewMode],
   );
 
+  // ===== エクスポート =====
+  const handleExport = useCallback(() => {
+    const now = new Date().toISOString();
+    const payload = JSON.stringify({ updatedAt: now, tasks }, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tasks-${now.slice(0, 10).replace(/-/g, "")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [tasks]);
+
+  // ===== インポート（JSON → DB + state） =====
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleImportClick = useCallback(() => fileInputRef.current?.click(), []);
+
+  const handleImportFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        try {
+          const result = tasksFileSchema.safeParse(
+            JSON.parse(ev.target?.result as string),
+          );
+          if (!result.success) {
+            alert(`インポート失敗: JSONの形式が正しくありません。\n${result.error.issues[0]?.message}`);
+            return;
+          }
+          const res = await fetch("/api/tasks/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(result.data),
+          });
+          if (!res.ok) {
+            alert("インポート失敗: DB への保存に失敗しました。");
+            return;
+          }
+          setTasks(result.data.tasks);
+        } catch {
+          alert("インポート失敗: ファイルを読み込めませんでした。");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    },
+    [],
+  );
+
+  // ===== 部署管理 =====
   const addDepartment = useCallback((name: string) => {
     setDepartments((prev) => [
       ...prev,
@@ -428,13 +404,7 @@ export function Workspace({
     setDepartments((prev) =>
       prev.map((d) =>
         d.id === deptId
-          ? {
-              ...d,
-              positions: [
-                ...d.positions,
-                { id: `p-${Date.now()}`, name: posName, count: 0 },
-              ],
-            }
+          ? { ...d, positions: [...d.positions, { id: `p-${Date.now()}`, name: posName, count: 0 }] }
           : d,
       ),
     );
@@ -451,7 +421,6 @@ export function Workspace({
   }, []);
 
   const togglePane4 = useCallback(() => setPane4ManuallyClosed((v) => !v), []);
-
   const breadcrumbTaskTitle = activeTask?.title ?? "タスク未選択";
 
   return (
@@ -543,61 +512,55 @@ export function Workspace({
           </div>
         )}
 
-        <div className="flex min-h-0 flex-1">
-          <TaskListPane
-            categoryTitle={positionTitle || "カテゴリー"}
-            groups={taskGroups}
-            selectedTaskId={activeTask?.id ?? ""}
-            onSelectTask={selectTask}
-            onAddTask={addTask}
-            onArchiveTask={archiveTask}
-            onRestoreTask={restoreTask}
-            onMoveTask={moveTask}
-          />
-          <TaskDashboardPane
-            task={activeTask}
-            onUpdateStatus={(status) => {
-              if (!activeTask) return;
-              // 未着手/保留 → 進行中 に変えたとき、開始日が未設定なら今日の日付を自動セット
-              const patch: Partial<typeof activeTask> = { status };
-              if (
-                status === "in_progress" &&
-                activeTask.status !== "in_progress" &&
-                !activeTask.startDate
-              ) {
-                patch.startDate = new Date().toISOString().slice(0, 10);
-              }
-              updateTask(activeTask.id, patch);
-            }}
-            onUpdateNextAction={(nextAction) =>
-              activeTask && updateTask(activeTask.id, { nextAction })
-            }
-            onUpdateAssignee={(assignee) =>
-              activeTask && updateTask(activeTask.id, { assignee })
-            }
-            onUpdateStartDate={(startDate) =>
-              activeTask && updateTask(activeTask.id, { startDate })
-            }
-            onUpdateDueDate={(dueDate) =>
-              activeTask && updateTask(activeTask.id, { dueDate })
-            }
-            onUpdateStatusDetail={(statusDetail) =>
-              activeTask && updateTask(activeTask.id, { statusDetail })
-            }
-            onUpdateIssue={(issue) =>
-              activeTask && updateTask(activeTask.id, { issue })
-            }
-            onUpdatePriority={(priority) =>
-              activeTask && updateTask(activeTask.id, { priority })
-            }
-          />
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
+            <ResizablePanel defaultSize={30} minSize={15} maxSize={55}>
+              <TaskListPane
+                categoryTitle={
+                  activeFilter
+                    ? `${{ unassigned: "未割当", inProgress: "進行中", alert: "期日警告", done: "完了" }[activeFilter]} — 全カテゴリー`
+                    : viewMode === "member"
+                      ? (initialMembers.find((m) => m.id === selectedMemberId)?.name ?? "課員")
+                      : positionTitle || "カテゴリー"
+                }
+                isFiltered={!!activeFilter}
+                groups={taskGroups}
+                selectedTaskId={activeTask?.id ?? ""}
+                onSelectTask={selectTask}
+                onAddTask={addTask}
+                onArchiveTask={archiveTask}
+                onRestoreTask={restoreTask}
+                onMoveTask={moveTask}
+              />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={70} minSize={30}>
+              <TaskDashboardPane
+                task={activeTask}
+                onUpdateTitle={(title) => activeTask && updateTask(activeTask.id, { title })}
+                onUpdateStatus={(status) => {
+                  if (!activeTask) return;
+                  const patch: Partial<Task> = { status };
+                  if (status === "in_progress" && activeTask.status !== "in_progress" && !activeTask.startDate) {
+                    patch.startDate = new Date().toISOString().slice(0, 10);
+                  }
+                  updateTask(activeTask.id, patch);
+                }}
+                onUpdateNextAction={(nextAction) => activeTask && updateTask(activeTask.id, { nextAction })}
+                onUpdateAssignee={(assignee) => activeTask && updateTask(activeTask.id, { assignee })}
+                onUpdateStartDate={(startDate) => activeTask && updateTask(activeTask.id, { startDate })}
+                onUpdateDueDate={(dueDate) => activeTask && updateTask(activeTask.id, { dueDate })}
+                onUpdateStatusDetail={(statusDetail) => activeTask && updateTask(activeTask.id, { statusDetail })}
+                onUpdateIssue={(issue) => activeTask && updateTask(activeTask.id, { issue })}
+                onUpdatePriority={(priority) => activeTask && updateTask(activeTask.id, { priority })}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
           <TaskNotesPane
             task={activeTask}
             pane4Open={pane4Open}
             onTogglePane4={togglePane4}
-            onUpdateNotes={(notes) =>
-              activeTask && updateTask(activeTask.id, { notes })
-            }
+            onUpdateNotes={(notes) => activeTask && updateTask(activeTask.id, { notes })}
           />
         </div>
       </SidebarInset>
