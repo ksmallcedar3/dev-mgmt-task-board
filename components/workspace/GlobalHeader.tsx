@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Loader2, Settings, Target, Users, UserX } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, Loader2, Settings, Target, Upload, Users, UserX } from "lucide-react";
 
 import { type Department } from "@/lib/schema";
 import { type ViewMode } from "@/components/workspace/Workspace";
@@ -42,6 +42,8 @@ type GlobalHeaderProps = {
   onViewModeChange: (mode: ViewMode) => void;
   activeFilter: "unassigned" | "inProgress" | "alert" | "done" | null;
   onFilterChange: (key: "unassigned" | "inProgress" | "alert" | "done") => void;
+  onExport: () => void;
+  onImport: () => void;
 };
 
 export function GlobalHeader({
@@ -56,6 +58,8 @@ export function GlobalHeader({
   onViewModeChange,
   activeFilter,
   onFilterChange,
+  onExport,
+  onImport,
 }: GlobalHeaderProps) {
   return (
     <header className="shrink-0">
@@ -149,7 +153,47 @@ export function GlobalHeader({
           {positionTitle || taskTitle || "—"}
         </span>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onExport}
+                  className="gap-1.5 text-[#6b6490] hover:text-[#c9a84c]"
+                  aria-label="タスクをエクスポート"
+                >
+                  <Download className="size-3" />
+                  <span className="text-[11px]">エクスポート</span>
+                </Button>
+              }
+            />
+            <TooltipContent side="bottom">
+              現在のタスクを JSON ファイルにダウンロード
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onImport}
+                  className="gap-1.5 text-[#6b6490] hover:text-[#c9a84c]"
+                  aria-label="タスクをインポート"
+                >
+                  <Upload className="size-3" />
+                  <span className="text-[11px]">インポート</span>
+                </Button>
+              }
+            />
+            <TooltipContent side="bottom">
+              JSON ファイルからタスクを読み込み（localStorage を上書き）
+            </TooltipContent>
+          </Tooltip>
+
           <Dialog>
             <Tooltip>
               <TooltipTrigger

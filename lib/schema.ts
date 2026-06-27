@@ -57,10 +57,18 @@ export const taskSchema = z.object({
   status: taskStatusSchema,
   /** 担当者名（任意）。空の場合は未割当とみなす */
   assignee: z.string().optional(),
-  /** 期日。"YYYY-MM-DD" 形式（任意） */
+  /** 開始期日。"YYYY-MM-DD" 形式（任意）。進行中に変えた時に自動セット */
+  startDate: z.string().optional(),
+  /** 終了期日。"YYYY-MM-DD" 形式（任意） */
   dueDate: z.string().optional(),
-  /** Pane 3: 公式の「次の一手」 */
+  /** Pane 3: 報告日時点の現在状況（上書き。必須） */
+  statusDetail: z.string().default(""),
+  /** Pane 3: 進めるうえでの障壁・困っていること（任意） */
+  issue: z.string().optional(),
+  /** Pane 3: 公式の「次の一手」（必須） */
   nextAction: z.string(),
+  /** 重要度フラグ。true = 課長に要確認 */
+  priority: z.boolean().default(false),
   /** Pane 4: 時系列の備考（次の一手は書かない） */
   notes: z.array(z.string()),
   archived: z.boolean().default(false),
@@ -69,6 +77,17 @@ export type Task = z.infer<typeof taskSchema>;
 
 export const departmentsSchema = z.array(departmentSchema);
 export const tasksSchema = z.array(taskSchema);
+
+/**
+ * tasks.json / エクスポートファイルの形式。
+ * updatedAt で localStorage とサーバー側のどちらが新しいかを比較する。
+ */
+export const tasksFileSchema = z.object({
+  /** ISO 8601 タイムスタンプ。最後に tasks を書き出した日時 */
+  updatedAt: z.string(),
+  tasks: tasksSchema,
+});
+export type TasksFile = z.infer<typeof tasksFileSchema>;
 
 export const workspaceSchema = z.object({
   name: z.string(),
@@ -83,8 +102,12 @@ export type TaskRow = {
   title: string;
   /** 担当者名。空文字 or undefined = 未割当 */
   assignee?: string;
-  /** 期日。"YYYY-MM-DD" 形式 */
+  /** 終了期日。"YYYY-MM-DD" 形式 */
   dueDate?: string;
+  /** 重要度フラグ。true = ★ 表示 */
+  priority?: boolean;
+  /** 課題テキストが入力されているか。true = ⚠ 表示 */
+  hasIssue?: boolean;
 };
 
 export type TaskGroup =

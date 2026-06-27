@@ -3,7 +3,7 @@
 import { type CSSProperties, type ReactNode } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, MoreHorizontal } from "lucide-react";
+import { AlertTriangle, GripVertical, MoreHorizontal, Star } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { type TaskRow, type TaskStatus } from "@/lib/schema";
@@ -91,7 +91,21 @@ export function SortableTaskRow({
           <GripVertical aria-hidden="true" className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className={cn("truncate text-sm", selected && "font-semibold")}>{task.title}</p>
+          <div className="flex items-center gap-1">
+            <p className={cn("truncate text-sm", selected && "font-semibold")}>{task.title}</p>
+            {task.priority && (
+              <Star
+                aria-label="要確認"
+                className="size-3 shrink-0 fill-amber-500 text-amber-500"
+              />
+            )}
+            {task.hasIssue && (
+              <AlertTriangle
+                aria-label="課題あり"
+                className={cn("size-3 shrink-0", selected ? "text-red-400" : "text-destructive")}
+              />
+            )}
+          </div>
           {/* 担当者・期日の補助情報 */}
           <div className="mt-0.5 flex items-center gap-2 text-xs">
             {/* 担当者 */}

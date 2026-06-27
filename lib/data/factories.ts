@@ -54,7 +54,9 @@ export function createMinimalTask(
     categoryId,
     title,
     status,
+    statusDetail: "",
     nextAction: "",
+    priority: false,
     notes: [],
     archived: false,
   };

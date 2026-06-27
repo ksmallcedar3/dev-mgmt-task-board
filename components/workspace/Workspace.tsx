@@ -5,9 +5,11 @@
  * Pane 1 カテゴリー → Pane 2 ステータス別タスク → Pane 3 状況・次の一手 → Pane 4 備考。
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { tasksFileSchema } from "@/lib/schema";
 
-const STORAGE_KEY = "dev-mgmt-task-board:tasks:v1";
+/** localStorage に保存する形式: { updatedAt, tasks } */
+const STORAGE_KEY = "dev-mgmt-task-board:tasks:v2";
 
 import {
   type Task,
@@ -47,6 +49,8 @@ function defaultPositionId(departments: Department[]): string {
 type WorkspaceProps = {
   initialDepartments: Department[];
   initialTasks: Task[];
+  /** tasks.json の updatedAt（デプロイ時のタイムスタンプ）。自動同期の比較に使う */
+  serverUpdatedAt: string;
   initialMembers: Member[];
   workspace: { name: string; icon: string };
 };
@@ -54,6 +58,7 @@ type WorkspaceProps = {
 export function Workspace({
   initialDepartments,
   initialTasks,
+  serverUpdatedAt,
   initialMembers,
   workspace,
 }: WorkspaceProps) {
@@ -63,20 +68,80 @@ export function Workspace({
   // サーバーとクライアントで初期値を揃えるため、まず initialTasks で初期化する
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
 
-  // マウント後（クライアント側のみ）に localStorage から復元する
+  // マウント後（クライアント側のみ）に localStorage から復元 / 自動同期する
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as Task[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setTasks(parsed);
-        }
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const result = tasksFileSchema.safeParse(JSON.parse(raw));
+      if (!result.success || result.data.tasks.length === 0) return;
+      // localStorage と tasks.json のどちらが新しいか比較して新しい方を採用
+      const localTs = new Date(result.data.updatedAt).getTime();
+      const serverTs = new Date(serverUpdatedAt).getTime();
+      if (localTs >= serverTs) {
+        setTasks(result.data.tasks);
       }
+      // serverTs > localTs の場合は initialTasks（サーバー側）をそのまま使う
     } catch {
       // 壊れたデータは無視
     }
   }, []); // マウント時のみ実行
+
+  // ===== エクスポート =====
+  const handleExport = useCallback(() => {
+    const now = new Date().toISOString();
+    const payload = JSON.stringify({ updatedAt: now, tasks }, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const dateStr = now.slice(0, 10).replace(/-/g, "");
+    a.href = url;
+    a.download = `tasks-${dateStr}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [tasks]);
+
+  // ===== インポート =====
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImportFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const result = tasksFileSchema.safeParse(
+            JSON.parse(ev.target?.result as string),
+          );
+          if (!result.success) {
+            alert(
+              `インポート失敗: JSONの形式が正しくありません。\n${result.error.issues[0]?.message}`,
+            );
+            return;
+          }
+          const { updatedAt, tasks: imported } = result.data;
+          setTasks(imported);
+          try {
+            localStorage.setItem(
+              STORAGE_KEY,
+              JSON.stringify({ updatedAt, tasks: imported }),
+            );
+          } catch {}
+        } catch {
+          alert("インポート失敗: ファイルを読み込めませんでした。");
+        }
+      };
+      reader.readAsText(file);
+      // 同じファイルを再選択できるよう value をリセット
+      e.target.value = "";
+    },
+    [],
+  );
 
 
   // ===== ビューモード =====
@@ -218,17 +283,24 @@ export function Workspace({
     setPane4ManuallyClosed(false);
   }, []);
 
+  const saveToStorage = useCallback((tasks: Task[]) => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ updatedAt: new Date().toISOString(), tasks }),
+      );
+    } catch {}
+  }, []);
+
   const updateTask = useCallback(
     (id: string, patch: Partial<Task>) => {
       setTasks((prev) => {
         const next = prev.map((t) => (t.id === id ? { ...t, ...patch } : t));
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        } catch {}
+        saveToStorage(next);
         return next;
       });
     },
-    [],
+    [saveToStorage],
   );
 
   const taskGroups: TaskGroup[] = useMemo(() => {
@@ -239,7 +311,14 @@ export function Workspace({
       label: TASK_STATUS_LABELS[status],
       items: filtered
         .filter((t) => t.status === status)
-        .map((t) => ({ id: t.id, title: t.title, assignee: t.assignee, dueDate: t.dueDate })),
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          assignee: t.assignee,
+          dueDate: t.dueDate,
+          priority: t.priority,
+          hasIssue: !!(t.issue?.trim()),
+        })),
     }));
 
     const archivedItems =
@@ -267,32 +346,32 @@ export function Workspace({
       const newTask = createMinimalTask(selectedCategoryId, trimmed, status);
       setTasks((prev) => {
         const next = [...prev, newTask];
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+        saveToStorage(next);
         return next;
       });
       setSelectedTaskId(newTask.id);
       setPane4ManuallyClosed(false);
     },
-    [selectedCategoryId],
+    [selectedCategoryId, saveToStorage],
   );
 
   const archiveTask = useCallback((id: string) => {
     setTasks((prev) => {
       const next = prev.map((t) => (t.id === id ? { ...t, archived: true } : t));
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      saveToStorage(next);
       return next;
     });
     setSelectedTaskId((prevId) => (prevId === id ? "" : prevId));
     setPane4ManuallyClosed(false);
-  }, []);
+  }, [saveToStorage]);
 
   const restoreTask = useCallback((id: string) => {
     setTasks((prev) => {
       const next = prev.map((t) => (t.id === id ? { ...t, archived: false } : t));
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+      saveToStorage(next);
       return next;
     });
-  }, []);
+  }, [saveToStorage]);
 
   const moveTask = useCallback(
     (id: string, toStatus: TaskStatus, toIndex: number) => {
@@ -327,11 +406,11 @@ export function Workspace({
           updated,
           ...without.slice(absInsertAt),
         ];
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+        saveToStorage(next);
         return next;
       });
     },
-    [selectedCategoryId],
+    [selectedCategoryId, saveToStorage],
   );
 
   const addDepartment = useCallback((name: string) => {
@@ -399,6 +478,16 @@ export function Workspace({
         />
       )}
       <SidebarInset className="flex min-w-0 flex-col bg-background">
+        {/* 隠しファイル入力（インポート用） */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={handleImportFile}
+          aria-hidden="true"
+        />
+
         <GlobalHeader
           departmentTitle={departmentTitle}
           positionTitle={positionTitle}
@@ -411,6 +500,8 @@ export function Workspace({
           onViewModeChange={setViewMode}
           activeFilter={activeFilter}
           onFilterChange={toggleFilter}
+          onExport={handleExport}
+          onImport={handleImportClick}
         />
 
         {/* 未割当バナー */}
@@ -465,17 +556,39 @@ export function Workspace({
           />
           <TaskDashboardPane
             task={activeTask}
-            onUpdateStatus={(status) =>
-              activeTask && updateTask(activeTask.id, { status })
-            }
+            onUpdateStatus={(status) => {
+              if (!activeTask) return;
+              // 未着手/保留 → 進行中 に変えたとき、開始日が未設定なら今日の日付を自動セット
+              const patch: Partial<typeof activeTask> = { status };
+              if (
+                status === "in_progress" &&
+                activeTask.status !== "in_progress" &&
+                !activeTask.startDate
+              ) {
+                patch.startDate = new Date().toISOString().slice(0, 10);
+              }
+              updateTask(activeTask.id, patch);
+            }}
             onUpdateNextAction={(nextAction) =>
               activeTask && updateTask(activeTask.id, { nextAction })
             }
             onUpdateAssignee={(assignee) =>
               activeTask && updateTask(activeTask.id, { assignee })
             }
+            onUpdateStartDate={(startDate) =>
+              activeTask && updateTask(activeTask.id, { startDate })
+            }
             onUpdateDueDate={(dueDate) =>
               activeTask && updateTask(activeTask.id, { dueDate })
+            }
+            onUpdateStatusDetail={(statusDetail) =>
+              activeTask && updateTask(activeTask.id, { statusDetail })
+            }
+            onUpdateIssue={(issue) =>
+              activeTask && updateTask(activeTask.id, { issue })
+            }
+            onUpdatePriority={(priority) =>
+              activeTask && updateTask(activeTask.id, { priority })
             }
           />
           <TaskNotesPane
