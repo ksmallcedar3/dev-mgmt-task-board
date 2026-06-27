@@ -299,7 +299,7 @@ export function TaskDashboardPane({
                   value={nextAction}
                   onSave={onUpdateNextAction}
                   onChange={setNextAction}
-                  placeholder="次に取る行動を一文で"
+                  placeholder="次に取る行動（これからどうするか）を一文で"
                   className="bg-transparent text-[#e8d9a8] placeholder:text-[#a09880]"
                 />
               </div>
@@ -316,7 +316,7 @@ export function TaskDashboardPane({
                   value={nextAction}
                   onSave={onUpdateNextAction}
                   onChange={setNextAction}
-                  placeholder="次に取る行動を一文で"
+                  placeholder="次に取る行動（これからどうするか）を一文で"
                   className="text-sm italic text-muted-foreground"
                 />
               </div>
