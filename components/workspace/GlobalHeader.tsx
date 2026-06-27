@@ -65,7 +65,7 @@ export function GlobalHeader({
     <header className="shrink-0">
       {/* ── 1段目：タイトル・タブ・サマリ ── */}
       <div
-        className="flex items-end justify-between gap-4 px-5 py-3"
+        className="flex items-center justify-between gap-4 px-5 py-3"
         style={{ background: "linear-gradient(135deg, #0d0d1a 0%, #1c1a30 100%)" }}
       >
         {/* 左：タイトル */}
@@ -73,7 +73,7 @@ export function GlobalHeader({
           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#c9a84c", letterSpacing: "0.15em" }}>
             Task Board
           </p>
-          <h1 className="text-[22px] font-black leading-tight tracking-tight text-white">
+          <h1 className="text-[25px] font-black leading-tight tracking-tight text-white">
             開発管理課タスク状況管理（2026）
           </h1>
         </div>
