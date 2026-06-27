@@ -316,7 +316,7 @@ export function TaskDashboardPane({
                   value={nextAction}
                   onSave={onUpdateNextAction}
                   onChange={setNextAction}
-                  placeholder="次に取る行動を一文で（公式・Pane 4 の備考とは別）"
+                  placeholder="次に取る行動を一文で"
                   className="text-sm italic text-muted-foreground"
                 />
               </div>
