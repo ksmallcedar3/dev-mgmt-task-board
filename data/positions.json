@@ -3,11 +3,17 @@
     "id": "d-goals",
     "name": "年度目標",
     "positions": [
-      { "id": "g-quality",  "name": "品質向上",             "count": 0 },
-      { "id": "g-prod",     "name": "生産性向上",           "count": 0 },
-      { "id": "g-talent",   "name": "人財育成",             "count": 0 },
-      { "id": "g-partner",  "name": "パートナーマネジメント", "count": 0 },
-      { "id": "g-onboard",  "name": "新人研修",             "count": 0 }
+      { "id": "g-talent-plan",  "name": "人財育成計画",       "count": 0 },
+      { "id": "g-quality-plan", "name": "品質向上計画",       "count": 0 },
+      { "id": "g-prod-plan",    "name": "生産性向上計画",     "count": 0 },
+      { "id": "g-partner",      "name": "パートナーマネジメント", "count": 0 },
+      { "id": "g-onboard",      "name": "新人研修",           "count": 0 },
+      { "id": "g-talent-exe",   "name": "人財育成推進",       "count": 0 },
+      { "id": "g-quality-exe",  "name": "品質向上推進",       "count": 0 },
+      { "id": "g-prod-exe",     "name": "生産性向上推進",     "count": 0 },
+      { "id": "g-staffing",     "name": "人員管理",           "count": 0 },
+      { "id": "g-recruit",      "name": "採用活動",           "count": 0 },
+      { "id": "g-other",        "name": "その他",             "count": 0 }
     ]
   }
 ]
