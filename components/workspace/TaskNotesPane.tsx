@@ -56,9 +56,7 @@ export function TaskNotesPane({
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col gap-4 p-4">
             <p className="text-xs text-muted-foreground">
-              時系列のメモです。「次の一手」は{" "}
-              <span className="font-medium text-foreground">「タスク詳細」欄</span>{" "}
-              にだけ書きます。
+              経緯・状況を時系列で残すメモ欄です。
             </p>
             <Separator />
             <div className="flex flex-col gap-3">
