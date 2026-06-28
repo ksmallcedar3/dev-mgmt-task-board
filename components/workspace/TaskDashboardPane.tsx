@@ -289,42 +289,16 @@ export function TaskDashboardPane({
               次の一手
               <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">必須</span>
             </SectionLabel>
-            {(nextAction || task.nextAction) ? (
-              <div
-                className="rounded-xl p-4 text-sm leading-relaxed"
-                style={{
-                  background: "linear-gradient(135deg, #111125, #1a1a38)",
-                  border: "1px solid rgba(201,168,76,0.25)",
-                  color: "#e8d9a8",
-                }}
-              >
-                <InlineTextareaField
-                  ariaLabel="次の一手"
-                  value={nextAction}
-                  onSave={onUpdateNextAction}
-                  onChange={setNextAction}
-                  placeholder="次に取る行動（これからどうするか）を一文で"
-                  className="bg-transparent text-[#e8d9a8] placeholder:text-[#a09880]"
-                />
-              </div>
-            ) : (
-              <div
-                className="rounded-xl p-4"
-                style={{
-                  border: "1px dashed #d5cfc4",
-                  background: "#faf8f2",
-                }}
-              >
-                <InlineTextareaField
-                  ariaLabel="次の一手"
-                  value={nextAction}
-                  onSave={onUpdateNextAction}
-                  onChange={setNextAction}
-                  placeholder="次に取る行動（これからどうするか）を一文で"
-                  className="text-sm italic text-muted-foreground"
-                />
-              </div>
-            )}
+            <div className="rounded-lg border border-input bg-card px-3 py-2">
+              <InlineTextareaField
+                ariaLabel="次の一手"
+                value={nextAction}
+                onSave={onUpdateNextAction}
+                onChange={setNextAction}
+                placeholder="次に取る行動（これからどうするか）を一文で"
+                className="text-sm text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
           </div>
 
         </div>
