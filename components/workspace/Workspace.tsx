@@ -467,6 +467,7 @@ export function Workspace({
             <ResizablePanel defaultSize={70} minSize={30}>
               <TaskDashboardPane
                 task={activeTask}
+                members={initialMembers}
                 onUpdateTitle={(title) => activeTask && updateTask(activeTask.id, { title })}
                 onUpdateStatus={(status) => {
                   if (!activeTask) return;

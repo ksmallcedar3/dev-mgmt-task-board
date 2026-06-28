@@ -4,7 +4,7 @@
  * Pane 3: タスクの「状況」と「次の一手」（公式）。
  */
 
-import { type Task, type TaskStatus, TASK_STATUS_ORDER } from "@/lib/schema";
+import { type Task, type TaskStatus, type Member, TASK_STATUS_ORDER } from "@/lib/schema";
 import { TASK_STATUS_LABELS } from "@/lib/labels";
 import {
   Card,
@@ -31,6 +31,7 @@ import { useState, useEffect, useRef } from "react";
 
 type TaskDashboardPaneProps = {
   task: Task | null;
+  members: Member[];
   onUpdateTitle: (title: string) => void;
   onUpdateStatus: (status: TaskStatus) => void;
   onUpdateNextAction: (nextAction: string) => void;
@@ -44,6 +45,7 @@ type TaskDashboardPaneProps = {
 
 export function TaskDashboardPane({
   task,
+  members,
   onUpdateTitle,
   onUpdateStatus,
   onUpdateNextAction,
@@ -54,7 +56,6 @@ export function TaskDashboardPane({
   onUpdateIssue,
   onUpdatePriority,
 }: TaskDashboardPaneProps) {
-  const [assignee, setAssignee] = useState(task?.assignee ?? "");
   const [startDate, setStartDate] = useState(task?.startDate ?? "");
   const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
   const [statusDetail, setStatusDetail] = useState(task?.statusDetail ?? "");
@@ -64,7 +65,6 @@ export function TaskDashboardPane({
 
   // タスクが切り替わったときにローカル state を同期 & スクロール先頭へ
   useEffect(() => {
-    setAssignee(task?.assignee ?? "");
     setStartDate(task?.startDate ?? "");
     setDueDate(task?.dueDate ?? "");
     setStatusDetail(task?.statusDetail ?? "");
@@ -75,8 +75,7 @@ export function TaskDashboardPane({
       ?.scrollTo({ top: 0 });
   }, [task?.id]);
 
-  // localStorage 復元など外部から値が変わった場合も同期
-  useEffect(() => { setAssignee(task?.assignee ?? ""); }, [task?.assignee]);
+  // 外部から値が変わった場合も同期
   useEffect(() => { setStartDate(task?.startDate ?? ""); }, [task?.startDate]);
   useEffect(() => { setDueDate(task?.dueDate ?? ""); }, [task?.dueDate]);
   useEffect(() => { setStatusDetail(task?.statusDetail ?? ""); }, [task?.statusDetail]);
@@ -148,14 +147,26 @@ export function TaskDashboardPane({
             </CardHeader>
             <CardContent className="flex flex-col gap-3 pt-0">
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground">担当者</Label>
-                <InlineTextField
-                  ariaLabel="担当者"
-                  value={assignee}
-                  onSave={onUpdateAssignee}
-                  onChange={setAssignee}
-                  placeholder="担当者名を入力（空欄 = 未割当）"
-                />
+                <Label htmlFor="task-assignee" className="text-xs text-muted-foreground">担当者</Label>
+                <Select
+                  value={task.assignee ?? ""}
+                  onValueChange={(v) => onUpdateAssignee(v === "__unassigned__" ? "" : v as string)}
+                >
+                  <SelectTrigger id="task-assignee" className="h-8 w-full bg-card hover:bg-accent/40">
+                    <SelectValue placeholder="担当者を選択（空欄 = 未割当）" />
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectItem value="__unassigned__">
+                      <span className="text-muted-foreground">未割当</span>
+                    </SelectItem>
+                    {members.map((m) => (
+                      <SelectItem key={m.id} value={m.name}>
+                        {m.name}
+                        <span className="ml-1.5 text-xs text-muted-foreground">{m.role}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="task-start-date" className="text-xs text-muted-foreground">
