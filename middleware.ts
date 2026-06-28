@@ -7,11 +7,10 @@ import type { NextRequest } from "next/server";
  * 未設定のままローカル開発する場合は認証をスキップする。
  */
 export function middleware(request: NextRequest) {
-  const user = process.env.BASIC_AUTH_USER;
   const pass = process.env.BASIC_AUTH_PASSWORD;
 
   // 環境変数が未設定なら認証スキップ（ローカル開発用フォールバック）
-  if (!user || !pass) {
+  if (!pass) {
     return NextResponse.next();
   }
 
@@ -19,9 +18,9 @@ export function middleware(request: NextRequest) {
   if (authHeader.startsWith("Basic ")) {
     const encoded = authHeader.slice(6);
     const decoded = atob(encoded);
-    const [inputUser, ...rest] = decoded.split(":");
-    const inputPass = rest.join(":");
-    if (inputUser === user && inputPass === pass) {
+    // ユーザー名は問わず、パスワードのみ照合する
+    const inputPass = decoded.split(":").slice(1).join(":");
+    if (inputPass === pass) {
       return NextResponse.next();
     }
   }
