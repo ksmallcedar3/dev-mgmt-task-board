@@ -129,8 +129,10 @@ Pane 1            Pane 2                  Pane 3              Pane 4
 
 ### データ
 
-- API / DB 不要（JSON モックで完結）
-- Pane 4 備考: `string[]`（時系列）
+- **Neon DB（PostgreSQL）** + Next.js API Routes（`/api/tasks`）で永続化
+- フロントエンドは楽観的更新（blur 時に PATCH → DB 保存）
+- Vercel にデプロイ済み（git push で自動デプロイ）
+- Pane 4 備考: `string[]`（時系列、`task_notes` テーブルで管理）
 
 ---
 
@@ -168,7 +170,7 @@ Pane 1            Pane 2                  Pane 3              Pane 4
 
 ## 8. やらないこと（現フェーズ）
 
-- DB 接続・API・認証
+- 認証（Phase 2 移行時に実装予定）
 - 同時編集・権限管理
 - 人別フィルタ・切り替えビュー
 - 親子タスク・負荷の自動計算
