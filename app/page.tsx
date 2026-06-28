@@ -1,12 +1,10 @@
 import { cookies } from "next/headers";
 import { Workspace } from "@/components/workspace/Workspace";
 import positionsData from "@/data/positions.json";
-import tasksData from "@/data/tasks.json";
 import membersData from "@/data/members.json";
 import workspaceData from "@/data/workspace.json";
 import {
   departmentsSchema,
-  tasksFileSchema,
   membersSchema,
   workspaceSchema,
 } from "@/lib/schema";
@@ -26,12 +24,8 @@ export default async function Page() {
     throw new Error(`データの形式が正しくありません:\n${errors.join("\n")}`);
   }
 
-  // DB からタスクを取得。空なら tasks.json をフォールバックとして使用
-  let initialTasks = await getAllTasks().catch(() => null);
-  if (!initialTasks || initialTasks.length === 0) {
-    const fallback = tasksFileSchema.safeParse(tasksData);
-    initialTasks = fallback.success ? fallback.data.tasks : [];
-  }
+  // DB からタスクを取得
+  const initialTasks = await getAllTasks().catch(() => []);
 
   // Cookie から前回選択していたタスク ID を読み出す（SSR 時に正しいタスクを描画するため）
   const cookieStore = await cookies();
