@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>操作手順書 — 開発管理課タスク状況管理</title>
+<style>
+  :root {
+    --bg: #f5f6fa;
+    --card: #ffffff;
+    --border: #e2e4ea;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --primary: #1c1a30;
+    --accent: #c9a84c;
+    --step-bg: #f0f0ff;
+    --step-border: #6366f1;
+    --good: #16a34a;
+    --bad: #dc2626;
+    --tag-todo: #e5e7eb;
+    --tag-wip: #dbeafe;
+    --tag-hold: #fef3c7;
+    --tag-done: #dcfce7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── Title ─────────────────────────────────── */
+  .doc-header {
+    background: linear-gradient(135deg, #0d0d1a 0%, #1c1a30 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .doc-header .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+  .doc-header h1 {
+    font-size: 1.6rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+  .doc-header .meta {
+    font-size: 0.8rem;
+    color: #8888aa;
+  }
+  .doc-header .meta a { color: #c9a84c; }
+
+  /* ── Section ────────────────────────────────── */
+  .section {
+    margin-bottom: 2.5rem;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--primary);
+    border-left: 4px solid var(--accent);
+    padding-left: 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+
+  /* ── Screen diagram ─────────────────────────── */
+  .screen-diagram {
+    border: 2px solid #2d2850;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 0.78rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  .sd-header {
+    background: linear-gradient(135deg, #0d0d1a 0%, #1c1a30 100%);
+    color: white;
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sd-header .site-name { font-size: 0.72rem; color: var(--accent); font-weight: 700; }
+  .sd-header .site-title { font-size: 0.9rem; font-weight: 800; }
+  .sd-header .tabs { display: flex; gap: 0.4rem; }
+  .sd-tab {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 5px;
+    padding: 0.2rem 0.6rem;
+    color: #aaa;
+    font-size: 0.7rem;
+  }
+  .sd-tab.active {
+    background: rgba(201,168,76,0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .sd-body {
+    display: grid;
+    grid-template-columns: 160px 1fr 220px 160px;
+    border-top: 1px solid #2d2850;
+    min-height: 180px;
+  }
+  .sd-pane {
+    border-right: 1px solid var(--border);
+    padding: 0.7rem 0.8rem;
+    background: #fafbff;
+    position: relative;
+  }
+  .sd-pane:last-child { border-right: none; }
+  .sd-pane-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.3rem;
+  }
+  .sd-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.68rem;
+    color: #333;
+    cursor: pointer;
+  }
+  .sd-item.active {
+    border-color: #6366f1;
+    background: #f0f0ff;
+  }
+  .sd-item.goal-item { color: #555; }
+  .sd-badge {
+    display: inline-block;
+    font-size: 0.58rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    margin-bottom: 0.35rem;
+    font-weight: 700;
+  }
+  .badge-todo { background: var(--tag-todo); color: #555; }
+  .badge-wip  { background: var(--tag-wip);  color: #1d4ed8; }
+  .badge-hold { background: var(--tag-hold); color: #92400e; }
+  .badge-done { background: var(--tag-done); color: #15803d; }
+  .sd-field {
+    margin-bottom: 0.4rem;
+  }
+  .sd-field-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-bottom: 0.1rem;
+  }
+  .sd-field-value {
+    font-size: 0.68rem;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.2rem 0.4rem;
+  }
+  .sd-note-line {
+    font-size: 0.65rem;
+    color: #555;
+    padding: 0.15rem 0;
+    border-bottom: 1px dashed #e5e7eb;
+  }
+  .sd-note-line .date { color: var(--muted); margin-right: 0.3rem; }
+
+  /* callout arrows / labels */
+  .callout {
+    background: var(--accent);
+    color: #1a1a2e;
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 0.1rem 0.5rem;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── Steps ──────────────────────────────────── */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+  .step-num {
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    color: var(--accent);
+    font-size: 1.1rem;
+    font-weight: 900;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-body {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+  }
+  .step-body h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+  .step-body p, .step-body ul {
+    font-size: 0.82rem;
+    color: #374151;
+  }
+  .step-body ul { padding-left: 1.2rem; }
+  .step-body li { margin-bottom: 0.2rem; }
+
+  /* ── Mini UI mockup inside step ────────────── */
+  .mini-ui {
+    margin-top: 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 0.72rem;
+  }
+  .mini-ui-bar {
+    background: #f3f4f6;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.65rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mini-ui-body { padding: 0.5rem 0.7rem; background: white; }
+  .plus-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #6366f1;
+    color: white;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .arrow-right {
+    display: inline-block;
+    font-size: 1rem;
+    color: #6366f1;
+    font-weight: 700;
+  }
+
+  /* ── Field guide table ──────────────────────── */
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    background: var(--card);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .field-table th {
+    background: var(--primary);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.5rem 0.8rem;
+    text-align: left;
+  }
+  .field-table td {
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .field-table tr:last-child td { border-bottom: none; }
+  .field-table tr:nth-child(even) td { background: #fafbff; }
+  .required {
+    display: inline-block;
+    font-size: 0.58rem;
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    font-weight: 700;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+  }
+  .optional {
+    display: inline-block;
+    font-size: 0.58rem;
+    background: #e5e7eb;
+    color: #555;
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    font-weight: 700;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+  }
+  .save-auto {
+    font-size: 0.68rem;
+    color: #6366f1;
+    font-weight: 600;
+  }
+
+  /* ── Good / Bad examples ────────────────────── */
+  .example-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+  }
+  .example-box {
+    border-radius: 7px;
+    padding: 0.8rem 1rem;
+    font-size: 0.78rem;
+  }
+  .example-box.good {
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+  }
+  .example-box.bad {
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+  }
+  .example-box .ex-title {
+    font-size: 0.7rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .example-box.good .ex-title { color: var(--good); }
+  .example-box.bad  .ex-title { color: var(--bad); }
+  .example-box ul { padding-left: 1.1rem; color: #374151; }
+  .example-box li { margin-bottom: 0.25rem; line-height: 1.5; }
+
+  /* ── Note rule diagram ──────────────────────── */
+  .note-rule {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: start;
+    margin-top: 0.8rem;
+  }
+  .note-box {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem;
+    font-size: 0.78rem;
+  }
+  .note-box h4 {
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+  }
+  .note-box.pane3 { border-color: #6366f1; }
+  .note-box.pane4 { border-color: #0ea5e9; }
+  .note-box .pane-label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: white;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    margin-bottom: 0.4rem;
+    display: inline-block;
+  }
+  .pane3 .pane-label { background: #6366f1; }
+  .pane4 .pane-label { background: #0ea5e9; }
+  .note-line {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.7rem;
+    color: #374151;
+  }
+  .vs-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    padding-top: 2rem;
+  }
+  .vs-line {
+    font-size: 1.2rem;
+    color: var(--border);
+  }
+
+  /* ── Status flow ────────────────────────────── */
+  .status-flow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.8rem;
+  }
+  .status-chip {
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+  }
+  .flow-arrow {
+    color: var(--muted);
+    font-size: 1rem;
+  }
+
+  /* ── Tip box ────────────────────────────────── */
+  .tip {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-radius: 7px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.8rem;
+    color: #78350f;
+    margin-top: 0.8rem;
+  }
+  .tip-icon { font-size: 1rem; flex-shrink: 0; }
+
+  /* ── Trouble table ──────────────────────────── */
+  .trouble-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .trouble-table th {
+    background: #374151;
+    color: white;
+    padding: 0.5rem 0.8rem;
+    text-align: left;
+    font-size: 0.72rem;
+  }
+  .trouble-table td {
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    background: white;
+    vertical-align: top;
+  }
+  .trouble-table td:first-child { color: #b91c1c; font-weight: 600; }
+  .trouble-table tr:last-child td { border-bottom: none; }
+
+  /* ── Footer ─────────────────────────────────── */
+  .doc-footer {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .screen-diagram { page-break-after: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Title ── -->
+  <div class="doc-header">
+    <div class="label">操作手順書</div>
+    <h1>開発管理課タスク状況管理</h1>
+    <div class="meta">
+      対象: 初めてこのツールを使う方　／　URL:
+      <a href="https://dev-mgmt-task-board.vercel.app" target="_blank">
+        https://dev-mgmt-task-board.vercel.app
+      </a>
+    </div>
+  </div>
+
+  <!-- ── 1. 画面の構成 ── -->
+  <div class="section">
+    <div class="section-title">1　画面の構成</div>
+
+    <div class="screen-diagram">
+      <!-- header -->
+      <div class="sd-header">
+        <div>
+          <div class="site-name">Task Board</div>
+          <div class="site-title">開発管理課タスク状況管理（2026）</div>
+        </div>
+        <div class="tabs">
+          <span class="sd-tab active">目標ビュー</span>
+          <span class="sd-tab">課員ビュー</span>
+        </div>
+      </div>
+
+      <!-- 4 panes -->
+      <div class="sd-body">
+        <!-- pane 1 -->
+        <div class="sd-pane">
+          <div class="sd-pane-label">① 年度目標</div>
+          <div class="sd-item active goal-item">人財育成計画</div>
+          <div class="sd-item goal-item">品質向上計画</div>
+          <div class="sd-item goal-item">生産性向上計画</div>
+          <div class="sd-item goal-item">新人研修</div>
+          <div class="sd-item goal-item" style="color:#bbb">…</div>
+        </div>
+
+        <!-- pane 2 -->
+        <div class="sd-pane">
+          <div class="sd-pane-label">② タスク一覧（ステータス別）</div>
+          <span class="sd-badge badge-wip">進行中 2</span>
+          <div class="sd-item active" style="cursor:pointer">コードレビュー基準の整備</div>
+          <div class="sd-item" style="cursor:pointer">OJT計画書の作成</div>
+          <div style="margin-top:0.4rem"></div>
+          <span class="sd-badge badge-todo">未着手 1</span>
+          <div class="sd-item">品質チェックリスト更新</div>
+          <div style="margin-top:0.4rem"></div>
+          <span class="sd-badge badge-done">完了 1</span>
+          <div class="sd-item" style="color:#aaa;text-decoration:line-through">キックオフ実施</div>
+        </div>
+
+        <!-- pane 3 -->
+        <div class="sd-pane">
+          <div class="sd-pane-label">③ タスク詳細</div>
+          <div class="sd-field">
+            <div class="sd-field-label">担当者</div>
+            <div class="sd-field-value">石本 係長</div>
+          </div>
+          <div class="sd-field">
+            <div class="sd-field-label">ステータス</div>
+            <div class="sd-field-value">進行中</div>
+          </div>
+          <div class="sd-field">
+            <div class="sd-field-label">状況詳細</div>
+            <div class="sd-field-value" style="min-height:32px;font-size:0.62rem;color:#555">
+              ドラフト第一版を作成済み。<br>チームレビュー待ち。
+            </div>
+          </div>
+          <div class="sd-field">
+            <div class="sd-field-label">次の一手</div>
+            <div class="sd-field-value" style="font-size:0.62rem;color:#555">
+              〇〇さんにレビュー依頼メールを送る
+            </div>
+          </div>
+        </div>
+
+        <!-- pane 4 -->
+        <div class="sd-pane">
+          <div class="sd-pane-label">④ 備考メモ</div>
+          <div class="sd-note-line"><span class="date">07-01</span>キックオフ実施。参加者5名。</div>
+          <div class="sd-note-line"><span class="date">07-08</span>ドラフト完成。レビュー依頼済み。</div>
+          <div class="sd-note-line"><span class="date">07-15</span>フィードバック反映。承認待ち。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 凡例 -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-top:0.8rem;font-size:0.78rem;">
+      <div style="background:white;border:1px solid var(--border);border-radius:6px;padding:0.6rem;border-top:3px solid #6366f1;">
+        <strong>① 年度目標</strong><br><span style="color:var(--muted);font-size:0.72rem">目標を選んで絞り込む</span>
+      </div>
+      <div style="background:white;border:1px solid var(--border);border-radius:6px;padding:0.6rem;border-top:3px solid #0ea5e9;">
+        <strong>② タスク一覧</strong><br><span style="color:var(--muted);font-size:0.72rem">タスクの追加・選択</span>
+      </div>
+      <div style="background:white;border:1px solid var(--border);border-radius:6px;padding:0.6rem;border-top:3px solid #f59e0b;">
+        <strong>③ タスク詳細</strong><br><span style="color:var(--muted);font-size:0.72rem">内容の入力・編集</span>
+      </div>
+      <div style="background:white;border:1px solid var(--border);border-radius:6px;padding:0.6rem;border-top:3px solid #10b981;">
+        <strong>④ 備考メモ</strong><br><span style="color:var(--muted);font-size:0.72rem">経緯を時系列で記録</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. タスクを登録する ── -->
+  <div class="section">
+    <div class="section-title">2　タスクを登録する</div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>年度目標を選ぶ</h3>
+          <p>左サイドバー（①）から、登録したいタスクが属する<strong>年度目標をクリック</strong>します。</p>
+          <div class="mini-ui">
+            <div class="mini-ui-bar">① 年度目標</div>
+            <div class="mini-ui-body">
+              <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
+                <div style="background:#f0f0ff;border:1.5px solid #6366f1;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.7rem;font-weight:700;">人財育成計画</div>
+                <span style="font-size:0.7rem;color:#6366f1;">← クリック</span>
+              </div>
+              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.7rem;color:#aaa;margin-bottom:0.3rem;">品質向上計画</div>
+              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.7rem;color:#aaa;">生産性向上計画</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>「＋」ボタンでタスクを追加する</h3>
+          <p>Pane 2 のステータスグループ右端にある <strong style="color:#6366f1">「＋」ボタン</strong> をクリックします。</p>
+          <div class="mini-ui">
+            <div class="mini-ui-bar">② タスク一覧</div>
+            <div class="mini-ui-body">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem;">
+                <span class="sd-badge badge-todo" style="margin-bottom:0;">未着手 2</span>
+                <span class="plus-btn">＋</span>
+              </div>
+              <div style="font-size:0.68rem;color:#888;margin-left:0.2rem;">← 追加したいステータスの「＋」を押す</div>
+            </div>
+          </div>
+          <div class="tip">
+            <span class="tip-icon">💡</span>
+            <span>「未着手」に追加してから、あとでステータスを変更することもできます。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>タスク名を入力して「追加」を押す</h3>
+          <p>ダイアログにタスク名を入力し、「追加」ボタンをクリックします。</p>
+          <div class="mini-ui">
+            <div class="mini-ui-bar">新しいタスクを追加</div>
+            <div class="mini-ui-body" style="display:flex;gap:0.5rem;align-items:center;">
+              <div style="flex:1;border:1.5px solid #6366f1;border-radius:4px;padding:0.3rem 0.6rem;font-size:0.75rem;">
+                コードレビュー基準の整備
+              </div>
+              <div style="background:#6366f1;color:white;border-radius:4px;padding:0.3rem 0.7rem;font-size:0.72rem;font-weight:700;white-space:nowrap;">
+                追加
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 3. 詳細を入力する ── -->
+  <div class="section">
+    <div class="section-title">3　タスクの詳細を入力する</div>
+    <p style="font-size:0.82rem;color:#374151;margin-bottom:0.8rem;">
+      タスクをクリックすると右側の <strong>③ タスク詳細</strong> が開きます。以下の項目を入力してください。<br>
+      <strong style="color:#6366f1;">保存ボタンはありません。入力欄の外をクリックした瞬間に自動保存されます。</strong>
+    </p>
+    <table class="field-table">
+      <thead>
+        <tr>
+          <th style="width:120px">項目</th>
+          <th>入力内容</th>
+          <th style="width:160px">保存タイミング</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>タスク名</td>
+          <td>タスクの名称（クリックして編集できます）</td>
+          <td><span class="save-auto">⚡ 入力欄を離れたとき</span></td>
+        </tr>
+        <tr>
+          <td>担当者</td>
+          <td>プルダウンから自分の名前を選ぶ</td>
+          <td><span class="save-auto">⚡ 選んだ瞬間</span></td>
+        </tr>
+        <tr>
+          <td>開始期日</td>
+          <td>作業を開始した日（または開始予定日）</td>
+          <td><span class="save-auto">⚡ 入力欄を離れたとき</span></td>
+        </tr>
+        <tr>
+          <td>終了期日</td>
+          <td>完了予定日</td>
+          <td><span class="save-auto">⚡ 入力欄を離れたとき</span></td>
+        </tr>
+        <tr>
+          <td>ステータス</td>
+          <td>未着手 → 進行中 → 完了 の順で更新する</td>
+          <td><span class="save-auto">⚡ 選んだ瞬間</span></td>
+        </tr>
+        <tr>
+          <td>状況詳細 <span class="required">必須</span></td>
+          <td>いまどういう状態かを事実ベースで記述</td>
+          <td><span class="save-auto">⚡ 入力欄を離れたとき</span></td>
+        </tr>
+        <tr>
+          <td>課題 <span class="optional">任意</span></td>
+          <td>困っていること・ブロッカーがあれば記述</td>
+          <td><span class="save-auto">⚡ 入力欄を離れたとき</span></td>
+        </tr>
+        <tr>
+          <td>次の一手 <span class="required">必須</span></td>
+          <td>次に取る具体的なアクションを一文で</td>
+          <td><span class="save-auto">⚡ 入力欄を離れたとき</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 4. 書き方の例 ── -->
+  <div class="section">
+    <div class="section-title">4　各フィールドの書き方</div>
+
+    <div style="margin-bottom:1.2rem;">
+      <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;">📋 状況詳細 — 「いま何がどうなっているか」を事実で</div>
+      <div class="example-pair">
+        <div class="example-box good">
+          <div class="ex-title">✅ 良い例</div>
+          <ul>
+            <li>ドラフト第一版を作成済み。チームレビュー待ち。</li>
+            <li>○○さんと調整中。今週中に方針を確定する予定。</li>
+            <li>先週キックオフ実施。要件定義フェーズに入った。</li>
+          </ul>
+        </div>
+        <div class="example-box bad">
+          <div class="ex-title">❌ 避けたい例</div>
+          <ul>
+            <li>対応中<br><small>→ 状況が分からない</small></li>
+            <li>検討します<br><small>→ 何を検討するのか不明</small></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1.2rem;">
+      <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;">⚡ 次の一手 — 「次に自分が取る具体的なアクション」を一文で</div>
+      <div class="example-pair">
+        <div class="example-box good">
+          <div class="ex-title">✅ 良い例</div>
+          <ul>
+            <li>○○さんにレビュー依頼のメールを送る（今日中）</li>
+            <li>火曜の定例で承認を得る</li>
+            <li>ライセンス申請書を総務に提出する</li>
+          </ul>
+        </div>
+        <div class="example-box bad">
+          <div class="ex-title">❌ 避けたい例</div>
+          <ul>
+            <li>引き続き対応する<br><small>→ 具体性がない</small></li>
+            <li>検討する<br><small>→ 何をいつするのか不明</small></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5. 備考の使い方 ── -->
+  <div class="section">
+    <div class="section-title">5　備考（④）の使い方</div>
+
+    <div style="font-size:0.82rem;color:#374151;margin-bottom:0.8rem;">
+      備考は <strong>「経緯・状況を時系列で残すメモ欄」</strong> です。Pane 3 の右端にある <strong>「›」ボタン</strong> で開きます。
+    </div>
+
+    <!-- Pane 3 vs Pane 4 の使い分け図 -->
+    <div class="note-rule">
+      <div class="note-box pane3">
+        <span class="pane-label">③ タスク詳細</span>
+        <h4>ここに書くこと</h4>
+        <div class="note-line">📌 いまの状況詳細</div>
+        <div class="note-line">⚡ 次の一手（次のアクション）</div>
+        <div class="note-line">⚠️ 課題・ブロッカー</div>
+        <div style="font-size:0.68rem;color:#6366f1;margin-top:0.5rem;">← 常に「現在」の情報を上書きする</div>
+      </div>
+
+      <div class="vs-arrow">
+        <div class="vs-line">│</div>
+        <div>使い分け</div>
+        <div class="vs-line">│</div>
+      </div>
+
+      <div class="note-box pane4">
+        <span class="pane-label">④ 備考メモ</span>
+        <h4>ここに書くこと</h4>
+        <div class="note-line">📅 2026-07-01 キックオフ実施。参加者5名。</div>
+        <div class="note-line">📅 2026-07-08 ドラフト完成。レビュー依頼済み。</div>
+        <div class="note-line">📅 2026-07-15 フィードバック反映。承認待ち。</div>
+        <div style="font-size:0.68rem;color:#0ea5e9;margin-top:0.5rem;">← 過去の記録を追記していく（消さない）</div>
+      </div>
+    </div>
+
+    <div class="tip" style="margin-top:0.8rem;">
+      <span class="tip-icon">⚠️</span>
+      <span><strong>備考には「次の一手」を書かない。</strong> 次のアクションは必ず Pane 3 の「次の一手」欄に書いてください。備考は過去ログ専用です。</span>
+    </div>
+
+    <div style="margin-top:0.8rem;font-size:0.82rem;">
+      <strong>メモの追加手順：</strong>
+      <ol style="padding-left:1.3rem;margin-top:0.4rem;color:#374151;">
+        <li>④ 備考エリアの「行を追加」ボタンをクリック</li>
+        <li>今日の日付が自動入力される</li>
+        <li>日付の後ろに今日の状況を記録する</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ── 6. ステータスの変更 ── -->
+  <div class="section">
+    <div class="section-title">6　ステータスの変更</div>
+
+    <div class="status-flow">
+      <div class="status-chip" style="background:var(--tag-todo);color:#555;">未着手</div>
+      <span class="flow-arrow">→</span>
+      <div class="status-chip" style="background:var(--tag-wip);color:#1d4ed8;">進行中</div>
+      <span class="flow-arrow">→</span>
+      <div class="status-chip" style="background:var(--tag-hold);color:#92400e;">保留</div>
+      <span class="flow-arrow">→</span>
+      <div class="status-chip" style="background:var(--tag-done);color:#15803d;">完了</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-top:0.8rem;font-size:0.8rem;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:7px;padding:0.8rem;">
+        <strong>方法 A：プルダウンで変更</strong>
+        <ol style="padding-left:1.2rem;margin-top:0.4rem;color:#374151;">
+          <li>タスクをクリック</li>
+          <li>③ タスク詳細の「ステータス」を選ぶ</li>
+          <li>選んだ瞬間に自動保存</li>
+        </ol>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:7px;padding:0.8rem;">
+        <strong>方法 B：ドラッグ＆ドロップ</strong>
+        <ol style="padding-left:1.2rem;margin-top:0.4rem;color:#374151;">
+          <li>② 一覧でタスクをつかむ</li>
+          <li>別のステータスグループにドロップ</li>
+          <li>放した瞬間に自動保存</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. 困ったときは ── -->
+  <div class="section">
+    <div class="section-title">7　困ったときは</div>
+    <table class="trouble-table">
+      <thead>
+        <tr>
+          <th style="width:220px">症状</th>
+          <th>対処方法</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>入力したのに消えた</td>
+          <td>ページをリロードして確認。再入力後、入力欄の外をクリックして保存する</td>
+        </tr>
+        <tr>
+          <td>タスクが表示されない</td>
+          <td>左サイドバーで正しい年度目標が選ばれているか確認する</td>
+        </tr>
+        <tr>
+          <td>担当者欄に名前がない</td>
+          <td>課長に連絡し、メンバー一覧への追加を依頼する</td>
+        </tr>
+        <tr>
+          <td>画面が真っ白 / エラー表示</td>
+          <td>ページをリロード。改善しない場合は課長に連絡する</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="doc-footer">
+    開発管理課タスク状況管理 — 操作手順書　／　最終更新: 2026-06-28
+  </div>
+
+</div>
+</body>
+</html>
