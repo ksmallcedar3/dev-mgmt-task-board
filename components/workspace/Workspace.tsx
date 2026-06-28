@@ -144,7 +144,6 @@ export function Workspace({
   }, [departments, tasks]);
 
   const meta = findPositionMeta(departmentsWithCounts, selectedCategoryId);
-  const departmentTitle = meta?.departmentTitle ?? "";
   const positionTitle = meta?.positionTitle ?? "";
 
   const stats = useMemo(() => {
@@ -421,8 +420,6 @@ export function Workspace({
   }, []);
 
   const togglePane4 = useCallback(() => setPane4ManuallyClosed((v) => !v), []);
-  const breadcrumbTaskTitle = activeTask?.title ?? "タスク未選択";
-
   return (
     <SidebarProvider
       defaultOpen
@@ -458,9 +455,6 @@ export function Workspace({
         />
 
         <GlobalHeader
-          departmentTitle={departmentTitle}
-          positionTitle={positionTitle}
-          taskTitle={breadcrumbTaskTitle}
           departments={departments}
           onAddDepartment={addDepartment}
           onDeleteDepartment={deleteDepartment}

@@ -1,18 +1,10 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Download, Loader2, Settings, Target, Upload, Users, UserX, X } from "lucide-react";
+import { Download, Settings, Target, Upload, Users, X } from "lucide-react";
 
 import { type Department } from "@/lib/schema";
 import { type ViewMode } from "@/components/workspace/Workspace";
 import { cn } from "@/lib/utils";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -30,10 +22,6 @@ type Stats = {
 };
 
 type GlobalHeaderProps = {
-  departmentTitle: string;
-  positionTitle: string;
-  /** 選択中のタスク名（未選択時はプレースホルダ） */
-  taskTitle: string;
   departments: Department[];
   onAddDepartment: (name: string) => void;
   onDeleteDepartment: (deptId: string) => void;
@@ -47,9 +35,6 @@ type GlobalHeaderProps = {
 };
 
 export function GlobalHeader({
-  departmentTitle,
-  positionTitle,
-  taskTitle,
   departments,
   onAddDepartment,
   onDeleteDepartment,
@@ -62,8 +47,8 @@ export function GlobalHeader({
   onImport,
 }: GlobalHeaderProps) {
   return (
-    <header className="shrink-0">
-      {/* ── 1段目：タイトル・タブ・サマリ ── */}
+    <header className="shrink-0 border-b" style={{ borderColor: "#2d2850" }}>
+      {/* タイトル・タブ・サマリ・アクション（1段） */}
       <div
         className="flex items-center justify-between gap-4 px-5 py-3"
         style={{ background: "linear-gradient(135deg, #0d0d1a 0%, #1c1a30 100%)" }}
@@ -78,31 +63,100 @@ export function GlobalHeader({
           </h1>
         </div>
 
-        {/* 右：タブ＋サマリ */}
+        {/* 右：タブ・サマリ・アクション */}
         <div className="flex shrink-0 flex-col items-end gap-2.5">
-          {/* ビュー切替タブ */}
-          <div className="flex gap-1.5">
-            {(
-              [
-                { id: "goal", label: "目標ビュー", icon: Target },
-                { id: "member", label: "課員ビュー", icon: Users },
-              ] as const
-            ).map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => onViewModeChange(id)}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-full border px-4 py-1 text-[12px] font-bold transition-all",
-                  viewMode === id
-                    ? "border-[#c9a84c] bg-[#c9a84c] text-[#0d0d1a]"
-                    : "border-[#2d2850] bg-transparent text-[#a09880] hover:border-[#c9a84c] hover:text-[#c9a84c]",
-                )}
-              >
-                <Icon className="size-3" />
-                {label}
-              </button>
-            ))}
+          {/* ビュー切替タブ＋アクションボタン */}
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1.5">
+              {(
+                [
+                  { id: "goal", label: "目標ビュー", icon: Target },
+                  { id: "member", label: "課員ビュー", icon: Users },
+                ] as const
+              ).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onViewModeChange(id)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full border px-4 py-1 text-[12px] font-bold transition-all",
+                    viewMode === id
+                      ? "border-[#c9a84c] bg-[#c9a84c] text-[#0d0d1a]"
+                      : "border-[#2d2850] bg-transparent text-[#a09880] hover:border-[#c9a84c] hover:text-[#c9a84c]",
+                  )}
+                >
+                  <Icon className="size-3" />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* 区切り */}
+            <span className="h-4 w-px" style={{ background: "#2d2850" }} aria-hidden />
+
+            {/* アクション：エクスポート・インポート・設定 */}
+            <div className="flex items-center gap-0.5">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={onExport}
+                      className="text-[#6b6490] hover:text-[#c9a84c]"
+                      aria-label="タスクをエクスポート"
+                    >
+                      <Download className="size-3.5" />
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom">タスクを JSON でダウンロード</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={onImport}
+                      className="text-[#6b6490] hover:text-[#c9a84c]"
+                      aria-label="タスクをインポート"
+                    >
+                      <Upload className="size-3.5" />
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom">JSON ファイルからタスクを読み込み</TooltipContent>
+              </Tooltip>
+
+              <Dialog>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <DialogTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="text-[#6b6490] hover:text-[#c9a84c]"
+                            aria-label="ワークスペース設定"
+                          >
+                            <Settings className="size-3.5" />
+                          </Button>
+                        }
+                      />
+                    }
+                  />
+                  <TooltipContent side="bottom">ワークスペース設定</TooltipContent>
+                </Tooltip>
+                <SettingsDialogContent
+                  departments={departments}
+                  onAddDepartment={onAddDepartment}
+                  onDeleteDepartment={onDeleteDepartment}
+                />
+              </Dialog>
+            </div>
           </div>
 
           {/* サマリ統計（クリックでフィルター） */}
@@ -142,89 +196,6 @@ export function GlobalHeader({
               );
             })}
           </div>
-        </div>
-      </div>
-
-      {/* ── 2段目：パンくず＋設定 ── */}
-      <div
-        className="flex items-center gap-2 border-b px-5 py-1.5"
-        style={{ background: "#1a1a30", borderColor: "#2d2850" }}
-      >
-        <span className="text-[11px]" style={{ color: "#6b6490" }}>
-          開発管理課タスク状況管理
-        </span>
-        <span className="text-[11px]" style={{ color: "#3d3a5e" }}>/</span>
-        <span className="text-[11px] font-semibold" style={{ color: "#c9a84c" }}>
-          {positionTitle || taskTitle || "—"}
-        </span>
-
-        <div className="ml-auto flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onExport}
-                  className="gap-1.5 text-[#6b6490] hover:text-[#c9a84c]"
-                  aria-label="タスクをエクスポート"
-                >
-                  <Download className="size-3" />
-                  <span className="text-[11px]">エクスポート</span>
-                </Button>
-              }
-            />
-            <TooltipContent side="bottom">
-              現在のタスクを JSON ファイルにダウンロード
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onImport}
-                  className="gap-1.5 text-[#6b6490] hover:text-[#c9a84c]"
-                  aria-label="タスクをインポート"
-                >
-                  <Upload className="size-3" />
-                  <span className="text-[11px]">インポート</span>
-                </Button>
-              }
-            />
-            <TooltipContent side="bottom">
-              JSON ファイルからタスクを読み込み（localStorage を上書き）
-            </TooltipContent>
-          </Tooltip>
-
-          <Dialog>
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <DialogTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="text-[#6b6490] hover:text-[#c9a84c]"
-                        aria-label="ワークスペース設定"
-                      >
-                        <Settings />
-                      </Button>
-                    }
-                  />
-                }
-              />
-              <TooltipContent side="bottom">ワークスペース設定</TooltipContent>
-            </Tooltip>
-            <SettingsDialogContent
-              departments={departments}
-              onAddDepartment={onAddDepartment}
-              onDeleteDepartment={onDeleteDepartment}
-            />
-          </Dialog>
         </div>
       </div>
     </header>
