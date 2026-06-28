@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Settings, Target, Upload, Users, X } from "lucide-react";
+import { Settings, Target, Users, X } from "lucide-react";
 
 import { type Department } from "@/lib/schema";
 import { type ViewMode } from "@/components/workspace/Workspace";
@@ -30,8 +30,6 @@ type GlobalHeaderProps = {
   onViewModeChange: (mode: ViewMode) => void;
   activeFilter: "unassigned" | "inProgress" | "alert" | "done" | null;
   onFilterChange: (key: "unassigned" | "inProgress" | "alert" | "done") => void;
-  onExport: () => void;
-  onImport: () => void;
 };
 
 export function GlobalHeader({
@@ -43,8 +41,6 @@ export function GlobalHeader({
   onViewModeChange,
   activeFilter,
   onFilterChange,
-  onExport,
-  onImport,
 }: GlobalHeaderProps) {
   return (
     <header className="shrink-0 border-b" style={{ borderColor: "#2d2850" }}>
@@ -94,42 +90,8 @@ export function GlobalHeader({
             {/* 区切り */}
             <span className="h-4 w-px" style={{ background: "#2d2850" }} aria-hidden />
 
-            {/* アクション：エクスポート・インポート・設定 */}
+            {/* アクション：設定 */}
             <div className="flex items-center gap-0.5">
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={onExport}
-                      className="text-[#6b6490] hover:text-[#c9a84c]"
-                      aria-label="タスクをエクスポート"
-                    >
-                      <Download className="size-3.5" />
-                    </Button>
-                  }
-                />
-                <TooltipContent side="bottom">タスクを JSON でダウンロード</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={onImport}
-                      className="text-[#6b6490] hover:text-[#c9a84c]"
-                      aria-label="タスクをインポート"
-                    >
-                      <Upload className="size-3.5" />
-                    </Button>
-                  }
-                />
-                <TooltipContent side="bottom">JSON ファイルからタスクを読み込み</TooltipContent>
-              </Tooltip>
-
               <Dialog>
                 <Tooltip>
                   <TooltipTrigger

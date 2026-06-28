@@ -6,8 +6,7 @@
  * データの永続化は Neon DB（/api/tasks）が担う。
  */
 
-import { useState, useCallback, useMemo, useRef } from "react";
-import { tasksFileSchema } from "@/lib/schema";
+import { useState, useCallback, useMemo } from "react";
 
 /** 選択中タスク ID を Cookie に保存するキー（SSR で読み取りフラッシュを防ぐ） */
 const SELECTED_TASK_COOKIE = "dmtb_selectedTaskId";
@@ -336,57 +335,6 @@ export function Workspace({
     [viewMode],
   );
 
-  // ===== エクスポート =====
-  const handleExport = useCallback(() => {
-    const now = new Date().toISOString();
-    const payload = JSON.stringify({ updatedAt: now, tasks }, null, 2);
-    const blob = new Blob([payload], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `tasks-${now.slice(0, 10).replace(/-/g, "")}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [tasks]);
-
-  // ===== インポート（JSON → DB + state） =====
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const handleImportClick = useCallback(() => fileInputRef.current?.click(), []);
-
-  const handleImportFile = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        try {
-          const result = tasksFileSchema.safeParse(
-            JSON.parse(ev.target?.result as string),
-          );
-          if (!result.success) {
-            alert(`インポート失敗: JSONの形式が正しくありません。\n${result.error.issues[0]?.message}`);
-            return;
-          }
-          const res = await fetch("/api/tasks/import", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(result.data),
-          });
-          if (!res.ok) {
-            alert("インポート失敗: DB への保存に失敗しました。");
-            return;
-          }
-          setTasks(result.data.tasks);
-        } catch {
-          alert("インポート失敗: ファイルを読み込めませんでした。");
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = "";
-    },
-    [],
-  );
-
   // ===== 部署管理 =====
   const addDepartment = useCallback((name: string) => {
     setDepartments((prev) => [
@@ -444,16 +392,6 @@ export function Workspace({
         />
       )}
       <SidebarInset className="flex min-w-0 flex-col bg-background">
-        {/* 隠しファイル入力（インポート用） */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json,application/json"
-          className="hidden"
-          onChange={handleImportFile}
-          aria-hidden="true"
-        />
-
         <GlobalHeader
           departments={departments}
           onAddDepartment={addDepartment}
@@ -463,8 +401,6 @@ export function Workspace({
           onViewModeChange={setViewMode}
           activeFilter={activeFilter}
           onFilterChange={toggleFilter}
-          onExport={handleExport}
-          onImport={handleImportClick}
         />
 
         {/* 未割当バナー */}
