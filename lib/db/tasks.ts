@@ -24,6 +24,7 @@ function rowToTask(row: Record<string, any>): Task {
     categoryId: row.category_id as string,
     title: row.title as string,
     status: row.status as TaskStatus,
+    subCategory: (row.sub_category as string) || undefined,
     assignee: (row.assignee as string) || undefined,
     startDate: toDateStr(row.start_date),
     dueDate: toDateStr(row.due_date),
@@ -60,7 +61,7 @@ export async function getAllTasks(): Promise<Task[]> {
 export async function createTask(task: Task): Promise<Task> {
   const [row] = await sql`
     INSERT INTO tasks (
-      id, category_id, title, status, assignee,
+      id, category_id, title, status, sub_category, assignee,
       start_date, due_date, status_detail, issue,
       next_action, priority, archived
     ) VALUES (
@@ -68,6 +69,7 @@ export async function createTask(task: Task): Promise<Task> {
       ${task.categoryId},
       ${task.title},
       ${task.status},
+      ${task.subCategory ?? null},
       ${task.assignee ?? null},
       ${task.startDate ?? null},
       ${task.dueDate ?? null},
@@ -96,6 +98,7 @@ export async function updateTask(
         category_id   = COALESCE(${fields.categoryId ?? null}, category_id),
         title         = COALESCE(${fields.title ?? null}, title),
         status        = COALESCE(${fields.status ?? null}, status),
+        sub_category  = ${fields.subCategory !== undefined ? (fields.subCategory || null) : sql`sub_category`},
         assignee      = ${fields.assignee !== undefined ? (fields.assignee || null) : sql`assignee`},
         start_date    = ${fields.startDate !== undefined ? (fields.startDate || null) : sql`start_date`},
         due_date      = ${fields.dueDate !== undefined ? (fields.dueDate || null) : sql`due_date`},

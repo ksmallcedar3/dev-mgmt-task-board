@@ -48,12 +48,14 @@ export function createMinimalTask(
   categoryId: string,
   title: string,
   status: TaskStatus = "todo",
+  subCategory?: string,
 ): Task {
   return {
     id: `t-${Date.now()}`,
     categoryId,
     title,
     status,
+    subCategory: subCategory || undefined,
     statusDetail: "",
     nextAction: "",
     priority: false,

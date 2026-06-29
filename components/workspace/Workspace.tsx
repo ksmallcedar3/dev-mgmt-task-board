@@ -21,6 +21,7 @@ import {
   type Department,
   type Member,
   type TaskGroup,
+  type StatusStats,
   TASK_STATUS_ORDER,
 } from "@/lib/schema";
 import { createMinimalTask } from "@/lib/data/factories";
@@ -244,41 +245,114 @@ export function Workspace({
     [],
   );
 
-  const taskGroups: TaskGroup[] = useMemo(() => {
-    const filtered = activeTasks;
-    const stageGroups: TaskGroup[] = TASK_STATUS_ORDER.map((status) => ({
-      kind: "status" as const,
-      status,
-      label: TASK_STATUS_LABELS[status],
-      items: filtered
-        .filter((t) => t.status === status)
-        .map((t) => ({
-          id: t.id,
-          title: t.title,
-          status: t.status,
-          assignee: t.assignee,
-          startDate: t.startDate,
-          dueDate: t.dueDate,
-          priority: t.priority,
-          hasIssue: !!(t.issue?.trim()),
-        })),
-    }));
+  const STATUS_PRIORITY: Record<TaskStatus, number> = { in_progress: 0, todo: 1, blocked: 2, done: 3 };
 
+  const toStats = (ts: Task[]): StatusStats => ({
+    todo: ts.filter((t) => t.status === "todo").length,
+    in_progress: ts.filter((t) => t.status === "in_progress").length,
+    blocked: ts.filter((t) => t.status === "blocked").length,
+    done: ts.filter((t) => t.status === "done").length,
+  });
+
+  const toRow = (t: Task) => ({
+    id: t.id,
+    title: t.title,
+    status: t.status,
+    assignee: t.assignee,
+    startDate: t.startDate,
+    dueDate: t.dueDate,
+    priority: t.priority,
+    hasIssue: !!(t.issue?.trim()),
+    subCategory: t.subCategory,
+  });
+
+  const taskGroups: TaskGroup[] = useMemo(() => {
     const archivedItems =
       viewMode === "goal"
         ? tasks
             .filter((t) => t.archived && t.categoryId === selectedCategoryId)
-            .map((t) => ({ id: t.id, title: t.title, status: t.status, assignee: t.assignee, startDate: t.startDate, dueDate: t.dueDate }))
+            .map(toRow)
+        : [];
+    const archivedGroup: TaskGroup[] =
+      archivedItems.length > 0
+        ? [{ kind: "archived" as const, label: ARCHIVED_GROUP_LABEL, items: archivedItems }]
         : [];
 
-    if (archivedItems.length === 0) return stageGroups;
-    return [
-      ...stageGroups,
-      { kind: "archived" as const, label: ARCHIVED_GROUP_LABEL, items: archivedItems },
-    ];
-  }, [activeTasks, viewMode, tasks, selectedCategoryId]);
+    // フィルター時はステータスグループ（従来通り）
+    if (activeFilter) {
+      const stageGroups: TaskGroup[] = TASK_STATUS_ORDER.map((status) => ({
+        kind: "status" as const,
+        status,
+        label: TASK_STATUS_LABELS[status],
+        items: activeTasks.filter((t) => t.status === status).map(toRow),
+      }));
+      return [...stageGroups, ...archivedGroup];
+    }
 
+    // 目標ビュー: 中項目でグループ化
+    if (viewMode === "goal") {
+      const catMap = new Map<string, Task[]>();
+      const uncategorized: Task[] = [];
+      for (const t of activeTasks) {
+        const key = t.subCategory?.trim() ?? "";
+        if (key) {
+          if (!catMap.has(key)) catMap.set(key, []);
+          catMap.get(key)!.push(t);
+        } else {
+          uncategorized.push(t);
+        }
+      }
+      const groups: TaskGroup[] = [];
+      for (const [label, ts] of catMap) {
+        const sorted = [...ts].sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
+        groups.push({ kind: "subCategory" as const, label, items: sorted.map(toRow), stats: toStats(ts) });
+      }
+      if (uncategorized.length > 0) {
+        const sorted = [...uncategorized].sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
+        groups.push({ kind: "subCategory" as const, label: "（未分類）", items: sorted.map(toRow), stats: toStats(uncategorized) });
+      }
+      return [...groups, ...archivedGroup];
+    }
+
+    // 課員ビュー: 年度目標でグループ化
+    const catMap = new Map<string, Task[]>();
+    for (const t of activeTasks) {
+      if (!catMap.has(t.categoryId)) catMap.set(t.categoryId, []);
+      catMap.get(t.categoryId)!.push(t);
+    }
+    const groups: TaskGroup[] = [];
+    for (const [categoryId, ts] of catMap) {
+      const meta = findPositionMeta(departmentsWithCounts, categoryId);
+      const label = meta?.positionTitle ?? categoryId;
+      const sorted = [...ts].sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
+      groups.push({
+        kind: "goalCategory" as const,
+        categoryId,
+        label,
+        items: sorted.map(toRow),
+        stats: toStats(ts),
+      });
+    }
+    return groups;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTasks, viewMode, tasks, selectedCategoryId, activeFilter, departmentsWithCounts]);
+
+  /** 目標ビュー用（中項目指定） */
   const addTask = useCallback(
+    (title: string, subCategory?: string) => {
+      const trimmed = title.trim();
+      if (!trimmed) return;
+      const newTask = createMinimalTask(selectedCategoryId, trimmed, "todo", subCategory);
+      setTasks((prev) => [...prev, newTask]);
+      setSelectedTaskId(newTask.id);
+      setPane4ManuallyClosed(false);
+      apiCreate(newTask);
+    },
+    [selectedCategoryId],
+  );
+
+  /** フィルター時のステータス指定追加（従来互換） */
+  const addTaskByStatus = useCallback(
     (status: TaskStatus, title: string) => {
       const trimmed = title.trim();
       if (!trimmed) return;
@@ -290,6 +364,17 @@ export function Workspace({
     },
     [selectedCategoryId],
   );
+
+  /** 現在の年度目標の中項目候補（Pane2 datalist / Pane3 datalist 用） */
+  const subCategoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of tasks) {
+      if (t.categoryId === selectedCategoryId && t.subCategory?.trim()) {
+        set.add(t.subCategory.trim());
+      }
+    }
+    return [...set].sort();
+  }, [tasks, selectedCategoryId]);
 
   const archiveTask = useCallback((id: string) => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, archived: true } : t)));
@@ -457,10 +542,13 @@ export function Workspace({
                 groups={taskGroups}
                 selectedTaskId={activeTask?.id ?? ""}
                 onSelectTask={selectTask}
+                onAddTaskByStatus={addTaskByStatus}
                 onAddTask={addTask}
+                subCategoryOptions={subCategoryOptions}
                 onArchiveTask={archiveTask}
                 onRestoreTask={restoreTask}
                 onMoveTask={moveTask}
+                viewMode={viewMode}
               />
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -468,6 +556,7 @@ export function Workspace({
               <TaskDashboardPane
                 task={activeTask}
                 members={initialMembers}
+                subCategoryOptions={subCategoryOptions}
                 onUpdateTitle={(title) => activeTask && updateTask(activeTask.id, { title })}
                 onUpdateStatus={(status) => {
                   if (!activeTask) return;
@@ -484,6 +573,7 @@ export function Workspace({
                 onUpdateStatusDetail={(statusDetail) => activeTask && updateTask(activeTask.id, { statusDetail })}
                 onUpdateIssue={(issue) => activeTask && updateTask(activeTask.id, { issue })}
                 onUpdatePriority={(priority) => activeTask && updateTask(activeTask.id, { priority })}
+                onUpdateSubCategory={(subCategory) => activeTask && updateTask(activeTask.id, { subCategory })}
               />
             </ResizablePanel>
           </ResizablePanelGroup>

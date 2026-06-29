@@ -55,6 +55,8 @@ export const taskSchema = z.object({
   categoryId: z.string(),
   title: z.string(),
   status: taskStatusSchema,
+  /** 中項目。Pane 2 グループ見出し（自由テキスト、任意） */
+  subCategory: z.string().optional(),
   /** 担当者名（任意）。空の場合は未割当とみなす */
   assignee: z.string().optional(),
   /** 開始期日。"YYYY-MM-DD" 形式（任意）。進行中に変えた時に自動セット */
@@ -111,8 +113,22 @@ export type TaskRow = {
   priority?: boolean;
   /** 課題テキストが入力されているか。true = ⚠ 表示 */
   hasIssue?: boolean;
+  /** 中項目。subCategory グループ行で表示 */
+  subCategory?: string;
+  /** 年度目標ラベル。課員ビューで行に表示 */
+  categoryLabel?: string;
+};
+
+/** 中項目 / 年度目標グループのステータス集計 */
+export type StatusStats = {
+  todo: number;
+  in_progress: number;
+  blocked: number;
+  done: number;
 };
 
 export type TaskGroup =
   | { kind: "status"; status: TaskStatus; label: string; items: TaskRow[] }
+  | { kind: "subCategory"; label: string; items: TaskRow[]; stats: StatusStats }
+  | { kind: "goalCategory"; categoryId: string; label: string; items: TaskRow[]; stats: StatusStats }
   | { kind: "archived"; label: string; items: TaskRow[] };

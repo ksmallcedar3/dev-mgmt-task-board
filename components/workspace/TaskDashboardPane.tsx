@@ -32,6 +32,7 @@ import { useState, useEffect, useRef } from "react";
 type TaskDashboardPaneProps = {
   task: Task | null;
   members: Member[];
+  subCategoryOptions: string[];
   onUpdateTitle: (title: string) => void;
   onUpdateStatus: (status: TaskStatus) => void;
   onUpdateNextAction: (nextAction: string) => void;
@@ -41,11 +42,13 @@ type TaskDashboardPaneProps = {
   onUpdateStatusDetail: (statusDetail: string) => void;
   onUpdateIssue: (issue: string) => void;
   onUpdatePriority: (priority: boolean) => void;
+  onUpdateSubCategory: (subCategory: string) => void;
 };
 
 export function TaskDashboardPane({
   task,
   members,
+  subCategoryOptions,
   onUpdateTitle,
   onUpdateStatus,
   onUpdateNextAction,
@@ -55,12 +58,14 @@ export function TaskDashboardPane({
   onUpdateStatusDetail,
   onUpdateIssue,
   onUpdatePriority,
+  onUpdateSubCategory,
 }: TaskDashboardPaneProps) {
   const [startDate, setStartDate] = useState(task?.startDate ?? "");
   const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
   const [statusDetail, setStatusDetail] = useState(task?.statusDetail ?? "");
   const [issue, setIssue] = useState(task?.issue ?? "");
   const [nextAction, setNextAction] = useState(task?.nextAction ?? "");
+  const [subCategory, setSubCategory] = useState(task?.subCategory ?? "");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // タスクが切り替わったときにローカル state を同期 & スクロール先頭へ
@@ -70,6 +75,7 @@ export function TaskDashboardPane({
     setStatusDetail(task?.statusDetail ?? "");
     setIssue(task?.issue ?? "");
     setNextAction(task?.nextAction ?? "");
+    setSubCategory(task?.subCategory ?? "");
     scrollRef.current
       ?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]')
       ?.scrollTo({ top: 0 });
@@ -81,6 +87,7 @@ export function TaskDashboardPane({
   useEffect(() => { setStatusDetail(task?.statusDetail ?? ""); }, [task?.statusDetail]);
   useEffect(() => { setIssue(task?.issue ?? ""); }, [task?.issue]);
   useEffect(() => { setNextAction(task?.nextAction ?? ""); }, [task?.nextAction]);
+  useEffect(() => { setSubCategory(task?.subCategory ?? ""); }, [task?.subCategory]);
 
   if (!task) {
     return (
@@ -146,6 +153,26 @@ export function TaskDashboardPane({
               <CardTitle className="text-base">担当者・期日</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 pt-0">
+              {/* 中項目 */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="task-subcategory" className="text-xs text-muted-foreground">中項目</Label>
+                <input
+                  id="task-subcategory"
+                  list="pane3-subcategory-options"
+                  value={subCategory}
+                  onChange={(e) => setSubCategory(e.target.value)}
+                  onBlur={(e) => onUpdateSubCategory(e.target.value)}
+                  placeholder="例: 資格取得支援制度"
+                  className="h-8 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
+                />
+                {subCategoryOptions.length > 0 && (
+                  <datalist id="pane3-subcategory-options">
+                    {subCategoryOptions.map((opt) => (
+                      <option key={opt} value={opt} />
+                    ))}
+                  </datalist>
+                )}
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="task-assignee" className="text-xs text-muted-foreground">担当者</Label>
                 <Select
