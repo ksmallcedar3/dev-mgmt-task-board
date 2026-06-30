@@ -210,8 +210,8 @@ export function TaskListPane({
         >
           {categoryTitle}
         </h2>
-        {/* 目標ビュー（subCategory 表示）のときのみグローバル追加ボタン */}
-        {isSubCategoryView && !isFiltered && (
+        {/* 目標ビュー（タスク 0 件のカテゴリーを含む）のときグローバル追加ボタンを表示 */}
+        {viewMode === "goal" && !isFiltered && (
           <Button
             type="button"
             variant="ghost"
@@ -502,7 +502,6 @@ function SubCategoryGroup({
         {/* ヘッダー */}
         <div className="flex items-center gap-2 px-3 py-2">
           <CollapsibleTrigger
-            nativeButton={false}
             render={
               <button
                 type="button"
@@ -605,7 +604,6 @@ function GoalCategoryGroup({
         {/* ヘッダー */}
         <div className="flex items-center gap-2 px-3 py-2">
           <CollapsibleTrigger
-            nativeButton={false}
             render={
               <button
                 type="button"
