@@ -1,18 +1,15 @@
 "use client";
 
-import { Settings, Target, Users, X } from "lucide-react";
+import { Target, Users, X } from "lucide-react";
 
 import { type Department } from "@/lib/schema";
 import { type ViewMode } from "@/components/workspace/Workspace";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SettingsDialogContent } from "@/components/workspace/SettingsDialog";
 
 type Stats = {
   unassigned: number;
@@ -22,9 +19,6 @@ type Stats = {
 };
 
 type GlobalHeaderProps = {
-  departments: Department[];
-  onAddDepartment: (name: string) => void;
-  onDeleteDepartment: (deptId: string) => void;
   stats: Stats;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
@@ -33,9 +27,6 @@ type GlobalHeaderProps = {
 };
 
 export function GlobalHeader({
-  departments,
-  onAddDepartment,
-  onDeleteDepartment,
   stats,
   viewMode,
   onViewModeChange,
@@ -87,38 +78,6 @@ export function GlobalHeader({
               ))}
             </div>
 
-            {/* 区切り */}
-            <span className="h-4 w-px" style={{ background: "#2d2850" }} aria-hidden />
-
-            {/* アクション：設定 */}
-            <div className="flex items-center gap-0.5">
-              <Dialog>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <DialogTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="text-[#6b6490] hover:text-[#c9a84c]"
-                            aria-label="ワークスペース設定"
-                          >
-                            <Settings className="size-3.5" />
-                          </Button>
-                        }
-                      />
-                    }
-                  />
-                  <TooltipContent side="bottom">ワークスペース設定</TooltipContent>
-                </Tooltip>
-                <SettingsDialogContent
-                  departments={departments}
-                  onAddDepartment={onAddDepartment}
-                  onDeleteDepartment={onDeleteDepartment}
-                />
-              </Dialog>
-            </div>
           </div>
 
           {/* サマリ統計（クリックでフィルター） */}

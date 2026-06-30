@@ -478,9 +478,6 @@ export function Workspace({
       )}
       <SidebarInset className="flex min-w-0 flex-col bg-background">
         <GlobalHeader
-          departments={departments}
-          onAddDepartment={addDepartment}
-          onDeleteDepartment={deleteDepartment}
           stats={stats}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
