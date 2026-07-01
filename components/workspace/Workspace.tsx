@@ -6,7 +6,7 @@
  * データの永続化は Neon DB（/api/tasks）が担う。
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
 /** 選択中タスク ID を Cookie に保存するキー（SSR で読み取りフラッシュを防ぐ） */
 const SELECTED_TASK_COOKIE = "dmtb_selectedTaskId";
@@ -37,6 +37,8 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 
 export type ViewMode = "goal" | "member";
 
+export type SaveStatus = "idle" | "saving" | "saved" | "error";
+
 function findPositionMeta(
   departments: Department[],
   positionId: string,
@@ -61,29 +63,41 @@ type WorkspaceProps = {
   workspace: { name: string; icon: string };
 };
 
-// ===== API ヘルパー（fire-and-forget。楽観的更新と組み合わせる） =====
+// ===== API ヘルパー（楽観的更新と組み合わせ、成否を返す） =====
 
-async function apiPatch(id: string, patch: Partial<Task>) {
+async function apiPatch(id: string, patch: Partial<Task>): Promise<boolean> {
   try {
-    await fetch(`/api/tasks/${id}`, {
+    const res = await fetch(`/api/tasks/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
+    if (!res.ok) {
+      console.error("[apiPatch]", res.status, await res.text());
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error("[apiPatch]", err);
+    return false;
   }
 }
 
-async function apiCreate(task: Task) {
+async function apiCreate(task: Task): Promise<boolean> {
   try {
-    await fetch("/api/tasks", {
+    const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(task),
     });
+    if (!res.ok) {
+      console.error("[apiCreate]", res.status, await res.text());
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error("[apiCreate]", err);
+    return false;
   }
 }
 
@@ -130,6 +144,29 @@ export function Workspace({
   const [selectedCategoryId, setSelectedCategoryId] = useState(resolvedInitialCategoryId);
   const [selectedTaskId, setSelectedTaskId] = useState(resolvedInitialTaskId);
   const [pane4ManuallyClosed, setPane4ManuallyClosed] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const pendingSavesRef = useRef(0);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  const trackSave = useCallback(async (promise: Promise<boolean>) => {
+    pendingSavesRef.current += 1;
+    setSaveStatus("saving");
+    const ok = await promise;
+    pendingSavesRef.current -= 1;
+    if (pendingSavesRef.current > 0) return;
+
+    setSaveStatus(ok ? "saved" : "error");
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (ok) {
+      saveTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+    }
+  }, []);
 
   const departmentsWithCounts = useMemo(() => {
     return departments.map((d) => ({
@@ -240,9 +277,9 @@ export function Workspace({
   const updateTask = useCallback(
     (id: string, patch: Partial<Task>) => {
       setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
-      apiPatch(id, patch);
+      void trackSave(apiPatch(id, patch));
     },
-    [],
+    [trackSave],
   );
 
   const STATUS_PRIORITY: Record<TaskStatus, number> = { in_progress: 0, todo: 1, blocked: 2, done: 3 };
@@ -346,9 +383,9 @@ export function Workspace({
       setTasks((prev) => [...prev, newTask]);
       setSelectedTaskId(newTask.id);
       setPane4ManuallyClosed(false);
-      apiCreate(newTask);
+      void trackSave(apiCreate(newTask));
     },
-    [selectedCategoryId],
+    [selectedCategoryId, trackSave],
   );
 
   /** フィルター時のステータス指定追加（従来互換） */
@@ -360,9 +397,9 @@ export function Workspace({
       setTasks((prev) => [...prev, newTask]);
       setSelectedTaskId(newTask.id);
       setPane4ManuallyClosed(false);
-      apiCreate(newTask);
+      void trackSave(apiCreate(newTask));
     },
-    [selectedCategoryId],
+    [selectedCategoryId, trackSave],
   );
 
   /** 現在の年度目標の中項目候補（Pane2 datalist / Pane3 datalist 用） */
@@ -380,13 +417,13 @@ export function Workspace({
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, archived: true } : t)));
     setSelectedTaskId((prevId) => (prevId === id ? "" : prevId));
     setPane4ManuallyClosed(false);
-    apiPatch(id, { archived: true });
-  }, []);
+    void trackSave(apiPatch(id, { archived: true }));
+  }, [trackSave]);
 
   const restoreTask = useCallback((id: string) => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, archived: false } : t)));
-    apiPatch(id, { archived: false });
-  }, []);
+    void trackSave(apiPatch(id, { archived: false }));
+  }, [trackSave]);
 
   const moveTask = useCallback(
     (id: string, toStatus: TaskStatus, toIndex: number) => {
@@ -415,9 +452,9 @@ export function Workspace({
         return [...without.slice(0, absInsertAt), updated, ...without.slice(absInsertAt)];
       });
       // ステータス変更のみ DB に保存（並び順は Phase 2 対応）
-      apiPatch(id, { status: toStatus });
+      void trackSave(apiPatch(id, { status: toStatus }));
     },
-    [viewMode],
+    [viewMode, trackSave],
   );
 
   // ===== 部署管理 =====
@@ -483,6 +520,7 @@ export function Workspace({
           onViewModeChange={setViewMode}
           activeFilter={activeFilter}
           onFilterChange={toggleFilter}
+          saveStatus={saveStatus}
         />
 
         {/* 未割当バナー */}

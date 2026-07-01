@@ -1,9 +1,9 @@
 "use client";
 
-import { Target, Users, X } from "lucide-react";
+import { Target, Users, X, Loader2, Check, AlertTriangle } from "lucide-react";
 
 import { type Department } from "@/lib/schema";
-import { type ViewMode } from "@/components/workspace/Workspace";
+import { type SaveStatus, type ViewMode } from "@/components/workspace/Workspace";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -24,6 +24,13 @@ type GlobalHeaderProps = {
   onViewModeChange: (mode: ViewMode) => void;
   activeFilter: "unassigned" | "inProgress" | "alert" | "done" | null;
   onFilterChange: (key: "unassigned" | "inProgress" | "alert" | "done") => void;
+  saveStatus: SaveStatus;
+};
+
+const SAVE_STATUS_LABEL: Record<Exclude<SaveStatus, "idle">, { label: string; color: string; icon: typeof Check }> = {
+  saving: { label: "保存中…", color: "#a09880", icon: Loader2 },
+  saved: { label: "保存しました", color: "#7ecb97", icon: Check },
+  error: { label: "保存に失敗しました。再入力してください", color: "#f4a488", icon: AlertTriangle },
 };
 
 export function GlobalHeader({
@@ -32,6 +39,7 @@ export function GlobalHeader({
   onViewModeChange,
   activeFilter,
   onFilterChange,
+  saveStatus,
 }: GlobalHeaderProps) {
   return (
     <header className="shrink-0 border-b" style={{ borderColor: "#2d2850" }}>
@@ -48,6 +56,19 @@ export function GlobalHeader({
           <h1 className="text-[25px] font-black leading-tight tracking-tight text-white">
             開発管理課タスク状況管理（2026）
           </h1>
+          {saveStatus !== "idle" && (() => {
+            const { label, color, icon: Icon } = SAVE_STATUS_LABEL[saveStatus];
+            return (
+              <p
+                className="mt-1 flex items-center gap-1 text-[11px] font-medium"
+                style={{ color }}
+                aria-live="polite"
+              >
+                <Icon className={cn("size-3 shrink-0", saveStatus === "saving" && "animate-spin")} aria-hidden />
+                {label}
+              </p>
+            );
+          })()}
         </div>
 
         {/* 右：タブ・サマリ・アクション */}

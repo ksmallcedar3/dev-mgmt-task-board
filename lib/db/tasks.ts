@@ -84,34 +84,32 @@ export async function createTask(task: Task): Promise<Task> {
   return rowToTask({ ...row, notes: [] });
 }
 
-/** タスクを更新（notes フィールドは別処理） */
+/** タスクを更新（notes フィールドは別処理。patch に含まれたキーのみ UPDATE） */
 export async function updateTask(
   id: string,
   patch: Partial<Task>,
 ): Promise<void> {
-  // notes だけ分離して task_notes テーブルへ
   const { notes, ...fields } = patch;
 
   if (Object.keys(fields).length > 0) {
     await sql`
       UPDATE tasks SET
-        category_id   = COALESCE(${fields.categoryId ?? null}, category_id),
-        title         = COALESCE(${fields.title ?? null}, title),
-        status        = COALESCE(${fields.status ?? null}, status),
+        category_id   = ${fields.categoryId !== undefined ? fields.categoryId : sql`category_id`},
+        title         = ${fields.title !== undefined ? fields.title : sql`title`},
+        status        = ${fields.status !== undefined ? fields.status : sql`status`},
         sub_category  = ${fields.subCategory !== undefined ? (fields.subCategory || null) : sql`sub_category`},
         assignee      = ${fields.assignee !== undefined ? (fields.assignee || null) : sql`assignee`},
         start_date    = ${fields.startDate !== undefined ? (fields.startDate || null) : sql`start_date`},
         due_date      = ${fields.dueDate !== undefined ? (fields.dueDate || null) : sql`due_date`},
-        status_detail = COALESCE(${fields.statusDetail ?? null}, status_detail),
+        status_detail = ${fields.statusDetail !== undefined ? fields.statusDetail : sql`status_detail`},
         issue         = ${fields.issue !== undefined ? (fields.issue || null) : sql`issue`},
-        next_action   = COALESCE(${fields.nextAction ?? null}, next_action),
-        priority      = COALESCE(${fields.priority ?? null}, priority),
-        archived      = COALESCE(${fields.archived ?? null}, archived)
+        next_action   = ${fields.nextAction !== undefined ? fields.nextAction : sql`next_action`},
+        priority      = ${fields.priority !== undefined ? fields.priority : sql`priority`},
+        archived      = ${fields.archived !== undefined ? fields.archived : sql`archived`}
       WHERE id = ${id}
     `;
   }
 
-  // notes が含まれていたら task_notes を一括置換
   if (notes !== undefined) {
     await replaceNotes(id, notes);
   }
