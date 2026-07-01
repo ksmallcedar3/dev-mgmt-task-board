@@ -582,6 +582,7 @@
         <div>
           <div class="site-name">Task Board</div>
           <div class="site-title">開発管理課タスク状況管理（2026）</div>
+          <div style="font-size:0.62rem;color:#7ecb97;margin-top:0.15rem;">✓ 保存しました</div>
         </div>
         <div class="tabs">
           <span class="sd-tab active">目標ビュー</span>
@@ -615,7 +616,7 @@
               <span class="sd-group-plus">＋</span>
             </div>
           </div>
-          <div class="sd-item active" style="margin-left:0.5rem;font-size:0.65rem;">OJT計画書の作成</div>
+          <div class="sd-item active" style="margin-left:0.5rem;font-size:0.65rem;">OJT計画書の作成 <span style="color:#f59e0b">★</span></div>
           <div class="sd-item" style="margin-left:0.5rem;font-size:0.65rem;">スキルマップ更新</div>
           <!-- 中項目グループ B（未分類） -->
           <div class="sd-group-header" style="margin-top:0.3rem;">
@@ -631,26 +632,26 @@
         <!-- pane 3 -->
         <div class="sd-pane">
           <div class="sd-pane-label">③ タスク詳細</div>
-          <div class="sd-field">
-            <div class="sd-field-label">中項目</div>
-            <div class="sd-field-value">資格取得支援制度</div>
+          <div style="font-size:0.62rem;font-weight:700;color:#444;margin-bottom:0.3rem;border:1px solid var(--border);border-radius:4px;padding:0.3rem;background:white;">
+            <div style="font-size:0.58rem;color:var(--muted);margin-bottom:0.2rem;">担当・期日・状況</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.2rem;font-size:0.58rem;">
+              <div>中項目</div><div>担当者</div>
+              <div>開始期日</div><div>終了期日</div>
+              <div>ステータス</div><div>重要度 ☆</div>
+            </div>
           </div>
           <div class="sd-field">
-            <div class="sd-field-label">担当者</div>
-            <div class="sd-field-value">石本 係長</div>
-          </div>
-          <div class="sd-field">
-            <div class="sd-field-label">ステータス</div>
-            <div class="sd-field-value">進行中</div>
-          </div>
-          <div class="sd-field">
-            <div class="sd-field-label">状況詳細</div>
-            <div class="sd-field-value" style="min-height:32px;font-size:0.62rem;color:#555">
+            <div class="sd-field-label">状況詳細 <span style="color:#dc2626">必須</span></div>
+            <div class="sd-field-value" style="min-height:28px;font-size:0.62rem;color:#555">
               ドラフト第一版を作成済み。<br>チームレビュー待ち。
             </div>
           </div>
           <div class="sd-field">
-            <div class="sd-field-label">次の一手</div>
+            <div class="sd-field-label">課題 <span style="color:var(--muted)">任意</span></div>
+            <div class="sd-field-value" style="min-height:20px;font-size:0.62rem;color:#aaa">—</div>
+          </div>
+          <div class="sd-field">
+            <div class="sd-field-label">次の一手 <span style="color:#dc2626">必須</span></div>
             <div class="sd-field-value" style="font-size:0.62rem;color:#555">
               〇〇さんにレビュー依頼メールを送る
             </div>
@@ -682,6 +683,42 @@
         <strong>④ 備考メモ</strong><br><span style="color:var(--muted);font-size:0.72rem">経緯を時系列で記録</span>
       </div>
     </div>
+  </div>
+
+  <!-- ── 1.5 ヘッダーの保存表示 ── -->
+  <div class="section">
+    <div class="section-title">1.5　ヘッダーの保存表示</div>
+    <p style="font-size:0.82rem;color:#374151;margin-bottom:0.8rem;">
+      入力・変更のたびに、ヘッダー左（タイトル下）に保存状態が表示されます。リロードで確認するときは、先に <strong>「保存しました」</strong> が出るのを待ってください。
+    </p>
+    <table class="field-table">
+      <thead>
+        <tr><th style="width:180px">表示</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>保存中…</td><td>データベースへ送信中</td></tr>
+        <tr><td style="color:#16a34a;font-weight:700">保存しました</td><td>保存成功（数秒後に消える）</td></tr>
+        <tr><td style="color:#dc2626;font-weight:700">保存に失敗しました</td><td>保存失敗。再入力してください</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 1.6 タスク一覧のアイコン ── -->
+  <div class="section">
+    <div class="section-title">1.6　② タスク一覧の見方</div>
+    <p style="font-size:0.82rem;color:#374151;margin-bottom:0.8rem;">
+      タスク名の横にアイコンが付くことがあります。行の下にはステータス・担当者・期日も表示されます。
+    </p>
+    <table class="field-table">
+      <thead>
+        <tr><th style="width:120px">アイコン</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>⭐（黄色）</td><td><strong>要確認</strong> — ③ の「重要度」が ON</td></tr>
+        <tr><td>⚠（赤）</td><td><strong>課題あり</strong> — ③ の「課題」欄に文字がある</td></tr>
+        <tr><td style="color:#dc2626">未割当</td><td>担当者が未設定（② の行に赤字表示）</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- ── 2. 中項目とは ── -->
@@ -791,8 +828,9 @@
   <div class="section">
     <div class="section-title">4　タスクの詳細を入力する</div>
     <p style="font-size:0.82rem;color:#374151;margin-bottom:0.8rem;">
-      タスクをクリックすると右側の <strong>③ タスク詳細</strong> が開きます。以下の項目を入力してください。<br>
-      <strong style="color:#6366f1;">保存ボタンはありません。入力欄の外をクリックした瞬間に自動保存されます。</strong>
+      タスクをクリックすると右側の <strong>③ タスク詳細</strong> が開きます。<br>
+      上部に <strong>「担当・期日・状況」</strong> カード（2列）、その下に週次報告用の <strong>状況詳細・課題・次の一手</strong> がスクロールなしで並びます。<br>
+      <strong style="color:#6366f1;">保存ボタンはありません。入力欄の外をクリックした瞬間に自動保存されます。ヘッダーに「保存しました」と出れば完了です。</strong>
     </p>
     <table class="field-table">
       <thead>
@@ -832,6 +870,11 @@
           <td>ステータス</td>
           <td>未着手 → 進行中 → 完了 の順で更新する</td>
           <td><span class="save-auto">⚡ 選んだ瞬間</span></td>
+        </tr>
+        <tr>
+          <td>重要度</td>
+          <td><strong>要確認</strong> フラグ（課長確認が必要なとき ON）</td>
+          <td><span class="save-auto">⚡ クリックで切替</span></td>
         </tr>
         <tr>
           <td>状況詳細 <span class="required">必須</span></td>
@@ -1030,7 +1073,11 @@
       <tbody>
         <tr>
           <td>入力したのに消えた</td>
-          <td>ページをリロードして確認。再入力後、入力欄の外をクリックして保存する</td>
+          <td>ヘッダーに「保存しました」が出たか確認。出ていなければ再入力し、<strong>別の欄をクリック</strong>してからリロードする</td>
+        </tr>
+        <tr>
+          <td>ヘッダーに「保存に失敗しました」</td>
+          <td>通信エラーの可能性。再入力して保存し直す。改善しない場合は課長に連絡</td>
         </tr>
         <tr>
           <td>タスクが表示されない</td>
@@ -1061,7 +1108,7 @@
   </div>
 
   <div class="doc-footer">
-    開発管理課タスク状況管理 — 操作手順書　／　最終更新: 2026-06-30
+    開発管理課タスク状況管理 — 操作手順書　／　最終更新: 2026-07-01
   </div>
 
 </div>

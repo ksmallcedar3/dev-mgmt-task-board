@@ -36,7 +36,7 @@ npm run dev
 | `docs/user-guide.html` | 操作手順書（HTML・公開版） |
 | `docs/grill-product-brief.md` | プロダクト仕様 |
 
-操作手順書（公開）: https://dev-mgmt-user-guide.surge.sh
+操作手順書（公開）: https://dev-mgmt-task-board-user-guide.surge.sh
 
 ## フェーズ
 
