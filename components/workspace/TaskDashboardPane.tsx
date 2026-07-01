@@ -288,7 +288,6 @@ export function TaskDashboardPane({
                 ariaLabel="状況詳細"
                 value={statusDetail}
                 onSave={onUpdateStatusDetail}
-                onChange={setStatusDetail}
                 placeholder="報告日時点の現在状況を記入してください"
                 className="text-sm text-foreground placeholder:text-muted-foreground"
               />
@@ -314,7 +313,6 @@ export function TaskDashboardPane({
                 ariaLabel="課題"
                 value={issue}
                 onSave={onUpdateIssue}
-                onChange={setIssue}
                 placeholder="進めるうえでの障壁・困っていることがあれば記入"
                 className="text-sm text-foreground placeholder:text-muted-foreground"
               />
@@ -332,7 +330,6 @@ export function TaskDashboardPane({
                 ariaLabel="次の一手"
                 value={nextAction}
                 onSave={onUpdateNextAction}
-                onChange={setNextAction}
                 placeholder="次に取る行動（これからどうするか）を一文で"
                 className="text-sm text-foreground placeholder:text-muted-foreground"
               />

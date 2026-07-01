@@ -44,11 +44,13 @@ export function InlineTextField({
   className,
 }: InlineTextFieldProps) {
   const [localValue, setLocalValue] = useState(value);
-  /** フォーカス開始時の値。onChange で親 state が先に更新されても blur 保存できるようにする */
+  /** フォーカス開始時の値。blur 時にここと比較して保存する */
   const committedAtFocusRef = useRef(value);
+  const isFocusedRef = useRef(false);
 
-  // 外部から value が変化した時（localStorage 復元後など）に表示を同期
+  // 外部から value が変化した時（タスク切替・保存後の同期など）に表示を同期
   useEffect(() => {
+    if (isFocusedRef.current) return;
     setLocalValue(value);
     committedAtFocusRef.current = value;
   }, [value]);
@@ -60,14 +62,17 @@ export function InlineTextField({
       placeholder={placeholder ?? "未設定"}
       aria-label={ariaLabel}
       onFocus={() => {
+        isFocusedRef.current = true;
         committedAtFocusRef.current = value;
       }}
       onChange={(e) => {
         setLocalValue(e.target.value);
         onChange?.(e.target.value);
       }}
-      onBlur={() => {
-        if (localValue !== committedAtFocusRef.current) onSave(localValue);
+      onBlur={(e) => {
+        isFocusedRef.current = false;
+        const next = e.target.value;
+        if (next !== committedAtFocusRef.current) onSave(next);
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
