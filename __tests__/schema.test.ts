@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 
 import {
   departmentsSchema,
+  taskPatchSchema,
+  taskSchema,
   tasksSchema,
   workspaceSchema,
 } from "@/lib/schema";
@@ -51,6 +53,36 @@ describe("schema rejects invalid data", () => {
   it("workspaceSchema は name と icon を要求する", () => {
     expect(workspaceSchema.safeParse({ name: "" }).success).toBe(false);
     expect(workspaceSchema.safeParse({ icon: "" }).success).toBe(false);
+  });
+});
+
+describe("taskPatchSchema（PATCH 部分更新）", () => {
+  it("statusDetail のみ送信時に priority や空 statusDetail を混入しない", () => {
+    const result = taskPatchSchema.safeParse({
+      statusDetail: "システム部門全体への説明会を完了（計３回）。",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual({
+        statusDetail: "システム部門全体への説明会を完了（計３回）。",
+      });
+    }
+  });
+
+  it("priority のみ送信時に statusDetail を混入しない", () => {
+    const result = taskPatchSchema.safeParse({ priority: true });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual({ priority: true });
+    }
+  });
+
+  it("taskSchema.partial() は default を注入する（回帰防止の記録）", () => {
+    const legacy = taskSchema.partial().safeParse({ priority: true });
+    expect(legacy.success).toBe(true);
+    if (legacy.success) {
+      expect(legacy.data).toEqual({ statusDetail: "", priority: true, archived: false });
+    }
   });
 });
 

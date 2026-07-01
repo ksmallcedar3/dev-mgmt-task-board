@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateTask } from "@/lib/db/tasks";
-import { taskSchema } from "@/lib/schema";
+import { taskPatchSchema } from "@/lib/schema";
 
 /** PATCH /api/tasks/[id] — タスク部分更新 */
 export async function PATCH(
@@ -10,7 +10,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const result = taskSchema.partial().safeParse(body);
+    const result = taskPatchSchema.safeParse(body);
     if (!result.success) {
       return NextResponse.json(
         { error: result.error.issues[0]?.message },

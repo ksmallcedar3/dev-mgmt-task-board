@@ -77,6 +77,28 @@ export const taskSchema = z.object({
 });
 export type Task = z.infer<typeof taskSchema>;
 
+/**
+ * PATCH 用スキーマ。`.default()` を付けないこと。
+ * taskSchema.partial() だと未送信フィールドに default が注入され、
+ * 例: { statusDetail } だけの更新で priority:false / statusDetail:'' が混入する。
+ */
+export const taskPatchSchema = z.object({
+  categoryId: z.string().optional(),
+  title: z.string().optional(),
+  status: taskStatusSchema.optional(),
+  subCategory: z.string().optional(),
+  assignee: z.string().optional(),
+  startDate: z.string().optional(),
+  dueDate: z.string().optional(),
+  statusDetail: z.string().optional(),
+  issue: z.string().optional(),
+  nextAction: z.string().optional(),
+  priority: z.boolean().optional(),
+  archived: z.boolean().optional(),
+  notes: z.array(z.string()).optional(),
+});
+export type TaskPatch = z.infer<typeof taskPatchSchema>;
+
 export const departmentsSchema = z.array(departmentSchema);
 export const tasksSchema = z.array(taskSchema);
 
