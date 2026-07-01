@@ -149,6 +149,31 @@
     background: #f0f0ff;
   }
   .sd-item.goal-item { color: #555; }
+  .sd-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.2rem 0.4rem 0.2rem 0.5rem;
+    margin-bottom: 0.2rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #444;
+  }
+  .sd-group-plus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    background: #6366f1;
+    color: white;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+  }
   .sd-badge {
     display: inline-block;
     font-size: 0.58rem;
@@ -183,17 +208,6 @@
     border-bottom: 1px dashed #e5e7eb;
   }
   .sd-note-line .date { color: var(--muted); margin-right: 0.3rem; }
-
-  /* callout arrows / labels */
-  .callout {
-    background: var(--accent);
-    color: #1a1a2e;
-    font-size: 0.62rem;
-    font-weight: 800;
-    padding: 0.1rem 0.5rem;
-    border-radius: 20px;
-    white-space: nowrap;
-  }
 
   /* ── Steps ──────────────────────────────────── */
   .steps {
@@ -270,11 +284,17 @@
     font-size: 0.8rem;
     cursor: pointer;
   }
-  .arrow-right {
-    display: inline-block;
-    font-size: 1rem;
-    color: #6366f1;
+  .plus-btn-sm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    background: #6366f1;
+    color: white;
+    border-radius: 3px;
     font-weight: 700;
+    font-size: 0.65rem;
   }
 
   /* ── Field guide table ──────────────────────── */
@@ -441,7 +461,7 @@
     font-size: 1rem;
   }
 
-  /* ── Tip box ────────────────────────────────── */
+  /* ── Tip / Info box ─────────────────────────── */
   .tip {
     display: flex;
     gap: 0.6rem;
@@ -455,6 +475,46 @@
     margin-top: 0.8rem;
   }
   .tip-icon { font-size: 1rem; flex-shrink: 0; }
+  .info {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    border-radius: 7px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.8rem;
+    color: #1e3a5f;
+    margin-top: 0.8rem;
+  }
+
+  /* ── Archive diagram ────────────────────────── */
+  .archive-flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-top: 0.8rem;
+    font-size: 0.78rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .archive-box {
+    flex: 1;
+    padding: 0.8rem;
+    background: white;
+  }
+  .archive-box + .archive-box {
+    border-left: 1px solid var(--border);
+  }
+  .archive-box h4 {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .archive-box ul { padding-left: 1.1rem; color: #374151; }
+  .archive-box li { margin-bottom: 0.2rem; }
 
   /* ── Trouble table ──────────────────────────── */
   .trouble-table {
@@ -541,23 +601,40 @@
           <div class="sd-item goal-item" style="color:#bbb">…</div>
         </div>
 
-        <!-- pane 2 -->
+        <!-- pane 2: 中項目グループ表示 -->
         <div class="sd-pane">
-          <div class="sd-pane-label">② タスク一覧（ステータス別）</div>
-          <span class="sd-badge badge-wip">進行中 2</span>
-          <div class="sd-item active" style="cursor:pointer">コードレビュー基準の整備</div>
-          <div class="sd-item" style="cursor:pointer">OJT計画書の作成</div>
-          <div style="margin-top:0.4rem"></div>
-          <span class="sd-badge badge-todo">未着手 1</span>
-          <div class="sd-item">品質チェックリスト更新</div>
-          <div style="margin-top:0.4rem"></div>
-          <span class="sd-badge badge-done">完了 1</span>
-          <div class="sd-item" style="color:#aaa;text-decoration:line-through">キックオフ実施</div>
+          <div class="sd-pane-label" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>② タスク一覧（中項目別）</span>
+            <span class="sd-group-plus">＋</span>
+          </div>
+          <!-- 中項目グループ A -->
+          <div class="sd-group-header">
+            <span>▼ 資格取得支援制度</span>
+            <div style="display:flex;align-items:center;gap:0.3rem;">
+              <span class="sd-badge badge-wip" style="margin:0;font-size:0.55rem;">●2</span>
+              <span class="sd-group-plus">＋</span>
+            </div>
+          </div>
+          <div class="sd-item active" style="margin-left:0.5rem;font-size:0.65rem;">OJT計画書の作成</div>
+          <div class="sd-item" style="margin-left:0.5rem;font-size:0.65rem;">スキルマップ更新</div>
+          <!-- 中項目グループ B（未分類） -->
+          <div class="sd-group-header" style="margin-top:0.3rem;">
+            <span>▼ （未分類）</span>
+            <div style="display:flex;align-items:center;gap:0.3rem;">
+              <span class="sd-badge badge-todo" style="margin:0;font-size:0.55rem;">●1</span>
+              <span class="sd-group-plus">＋</span>
+            </div>
+          </div>
+          <div class="sd-item" style="margin-left:0.5rem;font-size:0.65rem;">2026年度説明会準備</div>
         </div>
 
         <!-- pane 3 -->
         <div class="sd-pane">
           <div class="sd-pane-label">③ タスク詳細</div>
+          <div class="sd-field">
+            <div class="sd-field-label">中項目</div>
+            <div class="sd-field-value">資格取得支援制度</div>
+          </div>
           <div class="sd-field">
             <div class="sd-field-label">担当者</div>
             <div class="sd-field-value">石本 係長</div>
@@ -596,7 +673,7 @@
         <strong>① 年度目標</strong><br><span style="color:var(--muted);font-size:0.72rem">目標を選んで絞り込む</span>
       </div>
       <div style="background:white;border:1px solid var(--border);border-radius:6px;padding:0.6rem;border-top:3px solid #0ea5e9;">
-        <strong>② タスク一覧</strong><br><span style="color:var(--muted);font-size:0.72rem">タスクの追加・選択</span>
+        <strong>② タスク一覧</strong><br><span style="color:var(--muted);font-size:0.72rem">中項目別 / タスク追加・選択</span>
       </div>
       <div style="background:white;border:1px solid var(--border);border-radius:6px;padding:0.6rem;border-top:3px solid #f59e0b;">
         <strong>③ タスク詳細</strong><br><span style="color:var(--muted);font-size:0.72rem">内容の入力・編集</span>
@@ -607,16 +684,42 @@
     </div>
   </div>
 
-  <!-- ── 2. タスクを登録する ── -->
+  <!-- ── 2. 中項目とは ── -->
   <div class="section">
-    <div class="section-title">2　タスクを登録する</div>
+    <div class="section-title">2　中項目とは</div>
+    <p style="font-size:0.82rem;color:#374151;margin-bottom:0.8rem;">
+      タスクには <strong>「中項目」</strong> というグループ分けラベルを付けられます。
+      ② タスク一覧では、中項目ごとにタスクが折りたたまれて表示されます。
+      中項目を設定していないタスクは <strong>「（未分類）」</strong> グループにまとめられます。
+    </p>
+
+    <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:0.78rem;font-family:monospace;">
+      <div style="color:#6366f1;font-weight:700;margin-bottom:0.5rem;">年度目標「人財育成計画」</div>
+      <div style="margin-left:1rem;">
+        <div style="margin-bottom:0.3rem;">├── 資格取得支援制度　　← <span style="color:#374151;font-family:sans-serif;font-size:0.72rem;">中項目あり</span></div>
+        <div style="margin-left:1.5rem;margin-bottom:0.1rem;">├── OJT計画書の作成</div>
+        <div style="margin-left:1.5rem;margin-bottom:0.3rem;">└── スキルマップ更新</div>
+        <div style="margin-bottom:0.3rem;">└── （未分類）　　　　　← <span style="color:#374151;font-family:sans-serif;font-size:0.72rem;">中項目を設定していないタスクの置き場</span></div>
+        <div style="margin-left:1.5rem;">└── 2026年度説明会準備</div>
+      </div>
+    </div>
+
+    <div class="info">
+      <span class="tip-icon">💡</span>
+      <span>中項目は <strong>③ タスク詳細の「中項目」欄から後から変更できます</strong>。変更すると ② タスク一覧のグループが即座に更新されます。</span>
+    </div>
+  </div>
+
+  <!-- ── 3. タスクを登録する ── -->
+  <div class="section">
+    <div class="section-title">3　タスクを登録する</div>
     <div class="steps">
 
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
           <h3>年度目標を選ぶ</h3>
-          <p>左サイドバー（①）から、登録したいタスクが属する<strong>年度目標をクリック</strong>します。</p>
+          <p>左サイドバー（①）から、登録したいタスクが属する<strong>年度目標をクリック</strong>します。タスクが 0 件の年度目標でも選択できます。</p>
           <div class="mini-ui">
             <div class="mini-ui-bar">① 年度目標</div>
             <div class="mini-ui-body">
@@ -624,8 +727,7 @@
                 <div style="background:#f0f0ff;border:1.5px solid #6366f1;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.7rem;font-weight:700;">人財育成計画</div>
                 <span style="font-size:0.7rem;color:#6366f1;">← クリック</span>
               </div>
-              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.7rem;color:#aaa;margin-bottom:0.3rem;">品質向上計画</div>
-              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.7rem;color:#aaa;">生産性向上計画</div>
+              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:4px;padding:0.2rem 0.5rem;font-size:0.7rem;color:#aaa;margin-bottom:0.3rem;">品質向上計画　　0件でも選択可</div>
             </div>
           </div>
         </div>
@@ -634,21 +736,21 @@
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <h3>「＋」ボタンでタスクを追加する</h3>
-          <p>Pane 2 のステータスグループ右端にある <strong style="color:#6366f1">「＋」ボタン</strong> をクリックします。</p>
+          <h3>「＋」ボタンをクリックする</h3>
+          <p>２種類の「＋」ボタンがあります。</p>
           <div class="mini-ui">
-            <div class="mini-ui-bar">② タスク一覧</div>
-            <div class="mini-ui-body">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem;">
-                <span class="sd-badge badge-todo" style="margin-bottom:0;">未着手 2</span>
-                <span class="plus-btn">＋</span>
-              </div>
-              <div style="font-size:0.68rem;color:#888;margin-left:0.2rem;">← 追加したいステータスの「＋」を押す</div>
+            <div class="mini-ui-bar" style="justify-content:space-between;">
+              <span>② タスク一覧</span>
+              <span class="plus-btn">＋</span>
             </div>
-          </div>
-          <div class="tip">
-            <span class="tip-icon">💡</span>
-            <span>「未着手」に追加してから、あとでステータスを変更することもできます。</span>
+            <div class="mini-ui-body">
+              <div style="font-size:0.68rem;color:#6366f1;margin-bottom:0.5rem;">↑ ヘッダーの ＋ → 中項目を自分で入力するダイアログが開く</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:0.25rem 0.4rem;margin-bottom:0.2rem;">
+                <span style="font-size:0.7rem;font-weight:700;">▼ 資格取得支援制度</span>
+                <span class="plus-btn-sm">＋</span>
+              </div>
+              <div style="font-size:0.68rem;color:#6366f1;">↑ グループ行の ＋ → その中項目がセット済みで開く（楽）</div>
+            </div>
           </div>
         </div>
       </div>
@@ -656,18 +758,28 @@
       <div class="step">
         <div class="step-num">3</div>
         <div class="step-body">
-          <h3>タスク名を入力して「追加」を押す</h3>
-          <p>ダイアログにタスク名を入力し、「追加」ボタンをクリックします。</p>
+          <h3>中項目・タスク名を入力して「追加」を押す</h3>
+          <p>ダイアログの「中項目」は任意です。空欄のまま追加すると「（未分類）」グループに入ります。</p>
           <div class="mini-ui">
-            <div class="mini-ui-bar">新しいタスクを追加</div>
-            <div class="mini-ui-body" style="display:flex;gap:0.5rem;align-items:center;">
-              <div style="flex:1;border:1.5px solid #6366f1;border-radius:4px;padding:0.3rem 0.6rem;font-size:0.75rem;">
-                コードレビュー基準の整備
+            <div class="mini-ui-bar">タスクを追加</div>
+            <div class="mini-ui-body" style="display:flex;flex-direction:column;gap:0.4rem;">
+              <div>
+                <div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.1rem;">中項目（任意）</div>
+                <div style="border:1px solid #e5e7eb;border-radius:4px;padding:0.25rem 0.6rem;font-size:0.72rem;color:#555;">資格取得支援制度</div>
               </div>
-              <div style="background:#6366f1;color:white;border-radius:4px;padding:0.3rem 0.7rem;font-size:0.72rem;font-weight:700;white-space:nowrap;">
-                追加
+              <div>
+                <div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.1rem;">タスク名</div>
+                <div style="border:1.5px solid #6366f1;border-radius:4px;padding:0.25rem 0.6rem;font-size:0.72rem;">OJT計画書の作成</div>
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:0.4rem;margin-top:0.1rem;">
+                <div style="border:1px solid #e5e7eb;border-radius:4px;padding:0.2rem 0.7rem;font-size:0.7rem;color:#666;">キャンセル</div>
+                <div style="background:#6366f1;color:white;border-radius:4px;padding:0.2rem 0.7rem;font-size:0.7rem;font-weight:700;">追加</div>
               </div>
             </div>
+          </div>
+          <div class="tip">
+            <span class="tip-icon">💡</span>
+            <span>追加後のステータスは「未着手」固定です。あとから ③ タスク詳細で変更できます。</span>
           </div>
         </div>
       </div>
@@ -675,9 +787,9 @@
     </div>
   </div>
 
-  <!-- ── 3. 詳細を入力する ── -->
+  <!-- ── 4. 詳細を入力する ── -->
   <div class="section">
-    <div class="section-title">3　タスクの詳細を入力する</div>
+    <div class="section-title">4　タスクの詳細を入力する</div>
     <p style="font-size:0.82rem;color:#374151;margin-bottom:0.8rem;">
       タスクをクリックすると右側の <strong>③ タスク詳細</strong> が開きます。以下の項目を入力してください。<br>
       <strong style="color:#6366f1;">保存ボタンはありません。入力欄の外をクリックした瞬間に自動保存されます。</strong>
@@ -694,6 +806,11 @@
         <tr>
           <td>タスク名</td>
           <td>タスクの名称（クリックして編集できます）</td>
+          <td><span class="save-auto">⚡ 入力欄を離れたとき</span></td>
+        </tr>
+        <tr>
+          <td>中項目 <span class="optional">任意</span></td>
+          <td>所属グループ名。変更すると ② タスク一覧のグループが即座に更新される</td>
           <td><span class="save-auto">⚡ 入力欄を離れたとき</span></td>
         </tr>
         <tr>
@@ -735,9 +852,9 @@
     </table>
   </div>
 
-  <!-- ── 4. 書き方の例 ── -->
+  <!-- ── 5. 書き方の例 ── -->
   <div class="section">
-    <div class="section-title">4　各フィールドの書き方</div>
+    <div class="section-title">5　各フィールドの書き方</div>
 
     <div style="margin-bottom:1.2rem;">
       <div style="font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;">📋 状況詳細 — 「いま何がどうなっているか」を事実で</div>
@@ -782,15 +899,14 @@
     </div>
   </div>
 
-  <!-- ── 5. 備考の使い方 ── -->
+  <!-- ── 6. 備考の使い方 ── -->
   <div class="section">
-    <div class="section-title">5　備考（④）の使い方</div>
+    <div class="section-title">6　備考（④）の使い方</div>
 
     <div style="font-size:0.82rem;color:#374151;margin-bottom:0.8rem;">
-      備考は <strong>「経緯・状況を時系列で残すメモ欄」</strong> です。Pane 3 の右端にある <strong>「›」ボタン</strong> で開きます。
+      備考は <strong>「経緯・状況を時系列で残すメモ欄」</strong> です。③ タスク詳細の右端にある <strong>「›」ボタン</strong> で ④ 備考メモを開きます。
     </div>
 
-    <!-- Pane 3 vs Pane 4 の使い分け図 -->
     <div class="note-rule">
       <div class="note-box pane3">
         <span class="pane-label">③ タスク詳細</span>
@@ -819,7 +935,7 @@
 
     <div class="tip" style="margin-top:0.8rem;">
       <span class="tip-icon">⚠️</span>
-      <span><strong>備考には「次の一手」を書かない。</strong> 次のアクションは必ず Pane 3 の「次の一手」欄に書いてください。備考は過去ログ専用です。</span>
+      <span><strong>備考には「次の一手」を書かない。</strong> 次のアクションは必ず ③ タスク詳細の「次の一手」欄に書いてください。④ 備考メモは過去ログ専用です。</span>
     </div>
 
     <div style="margin-top:0.8rem;font-size:0.82rem;">
@@ -832,9 +948,9 @@
     </div>
   </div>
 
-  <!-- ── 6. ステータスの変更 ── -->
+  <!-- ── 7. ステータスの変更 ── -->
   <div class="section">
-    <div class="section-title">6　ステータスの変更</div>
+    <div class="section-title">7　ステータスの変更</div>
 
     <div class="status-flow">
       <div class="status-chip" style="background:var(--tag-todo);color:#555;">未着手</div>
@@ -848,7 +964,7 @@
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-top:0.8rem;font-size:0.8rem;">
       <div style="background:var(--card);border:1px solid var(--border);border-radius:7px;padding:0.8rem;">
-        <strong>方法 A：プルダウンで変更</strong>
+        <strong>方法 A：プルダウンで変更（常時可能）</strong>
         <ol style="padding-left:1.2rem;margin-top:0.4rem;color:#374151;">
           <li>タスクをクリック</li>
           <li>③ タスク詳細の「ステータス」を選ぶ</li>
@@ -856,23 +972,58 @@
         </ol>
       </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:7px;padding:0.8rem;">
-        <strong>方法 B：ドラッグ＆ドロップ</strong>
+        <strong>方法 B：ドラッグ＆ドロップ（フィルター表示時のみ）</strong>
         <ol style="padding-left:1.2rem;margin-top:0.4rem;color:#374151;">
-          <li>② 一覧でタスクをつかむ</li>
-          <li>別のステータスグループにドロップ</li>
+          <li>メンバー名でフィルターをかけてステータスグループ表示に切り替える</li>
+          <li>② 一覧でタスクをつかんで別のステータスグループにドロップ</li>
           <li>放した瞬間に自動保存</li>
         </ol>
       </div>
     </div>
   </div>
 
-  <!-- ── 7. 困ったときは ── -->
+  <!-- ── 8. アーカイブ ── -->
   <div class="section">
-    <div class="section-title">7　困ったときは</div>
+    <div class="section-title">8　タスクのアーカイブ</div>
+
+    <p style="font-size:0.82rem;color:#374151;margin-bottom:0.8rem;">
+      完了済みや不要なタスクをリストから隠す操作です。<strong>削除ではなく「非表示」</strong>であり、後から復元できます。
+    </p>
+
+    <div class="archive-flow">
+      <div class="archive-box">
+        <h4>📦 アーカイブする手順</h4>
+        <ul>
+          <li>タスク行にカーソルを乗せる</li>
+          <li>右上に「📦」ボタンが現れる</li>
+          <li>クリックして確認ダイアログで「アーカイブ」を押す</li>
+          <li>タスクが一覧から消え「アーカイブ済み」セクションへ移動</li>
+        </ul>
+      </div>
+      <div class="archive-box">
+        <h4>↩ 復元する手順</h4>
+        <ul>
+          <li>② タスク一覧下部の「アーカイブ済み」セクションを開く</li>
+          <li>タスク行にカーソルを乗せる</li>
+          <li>「↩」ボタンをクリック</li>
+          <li>タスクが通常のリストに戻る</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="info" style="margin-top:0.8rem;">
+      <span class="tip-icon">ℹ️</span>
+      <span>現在のバージョンでは <strong>完全削除ボタンはありません</strong>。不要なタスクはアーカイブで非表示にしてください。</span>
+    </div>
+  </div>
+
+  <!-- ── 9. 困ったときは ── -->
+  <div class="section">
+    <div class="section-title">9　困ったときは</div>
     <table class="trouble-table">
       <thead>
         <tr>
-          <th style="width:220px">症状</th>
+          <th style="width:240px">症状</th>
           <th>対処方法</th>
         </tr>
       </thead>
@@ -890,6 +1041,18 @@
           <td>課長に連絡し、メンバー一覧への追加を依頼する</td>
         </tr>
         <tr>
+          <td>＋ボタンが見当たらない</td>
+          <td>目標ビューで年度目標を選択した状態になっているか確認する</td>
+        </tr>
+        <tr>
+          <td>アーカイブしたタスクを元に戻したい</td>
+          <td>② タスク一覧下部の「アーカイブ済み」を開いて「↩」ボタンを押す</td>
+        </tr>
+        <tr>
+          <td>中項目を変えたのにグループが変わらない</td>
+          <td>入力欄から外にクリックして保存を確定させてから確認する</td>
+        </tr>
+        <tr>
           <td>画面が真っ白 / エラー表示</td>
           <td>ページをリロード。改善しない場合は課長に連絡する</td>
         </tr>
@@ -898,7 +1061,7 @@
   </div>
 
   <div class="doc-footer">
-    開発管理課タスク状況管理 — 操作手順書　／　最終更新: 2026-06-28
+    開発管理課タスク状況管理 — 操作手順書　／　最終更新: 2026-06-30
   </div>
 
 </div>

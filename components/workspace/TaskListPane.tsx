@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import {
+  AlertTriangle,
   Archive,
   ArchiveRestore,
   ChevronDown,
   Filter,
   Plus,
+  Star,
 } from "lucide-react";
 import {
   DndContext,
@@ -720,9 +722,23 @@ function TaskItemRow({
             </span>
           )}
           {/* タスク名 */}
-          <p className={cn("truncate text-sm leading-tight", selected ? "font-semibold text-[#e8d9a8]" : "text-foreground")}>
-            {task.title}
-          </p>
+          <div className="flex min-w-0 items-center gap-1">
+            <p className={cn("truncate text-sm leading-tight", selected ? "font-semibold text-[#e8d9a8]" : "text-foreground")}>
+              {task.title}
+            </p>
+            {task.priority && (
+              <Star
+                aria-label="要確認"
+                className="size-3 shrink-0 fill-amber-500 text-amber-500"
+              />
+            )}
+            {task.hasIssue && (
+              <AlertTriangle
+                aria-label="課題あり"
+                className={cn("size-3 shrink-0", selected ? "text-red-400" : "text-destructive")}
+              />
+            )}
+          </div>
           {/* サブ情報行 */}
           <div className="flex items-center gap-2 text-xs">
             {/* ステータスバッジ */}

@@ -7,16 +7,17 @@
 
 | Pane | 役割 |
 |------|------|
-| **Pane 1** | テーマ（人財育成・品質向上 など）を選ぶ |
-| **Pane 2** | 選んだテーマ内のタスク一覧（ステータス別） |
-| **Pane 3** | 状況と次の一手（公式） |
-| **Pane 4** | 備考のみ（時系列メモ） |
+| **Pane 1** | 年度目標（人財育成・品質向上 など）を選ぶ |
+| **Pane 2** | 中項目グループ別タスク一覧。タスクの追加・選択 |
+| **Pane 3** | 状況詳細と次の一手（公式） |
+| **Pane 4** | 備考のみ（時系列メモ。次の一手は書かない） |
 
 ## 技術スタック
 
-- **Next.js 16** / **React 19** / **TypeScript**
-- **Tailwind CSS v4** / **shadcn/ui**
-- データ: JSON モック（`data/tasks.json`）
+- **Next.js 16** / **React 19** / **TypeScript**（strict）
+- **Tailwind CSS v4** / **shadcn/ui**（Base UI）
+- **@dnd-kit** — ドラッグ＆ドロップ
+- データ: PostgreSQL（`lib/db/tasks.ts`）
 
 ## 起動方法
 
@@ -26,6 +27,16 @@ npm run dev
 ```
 
 ブラウザで http://localhost:3000 を開く。
+
+## ドキュメント
+
+| ファイル | 内容 |
+|---------|------|
+| `docs/user-guide.md` | 操作手順書（Markdown） |
+| `docs/user-guide.html` | 操作手順書（HTML・公開版） |
+| `docs/grill-product-brief.md` | プロダクト仕様 |
+
+操作手順書（公開）: https://dev-mgmt-user-guide.surge.sh
 
 ## フェーズ
 
