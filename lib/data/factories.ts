@@ -63,3 +63,23 @@ export function createMinimalTask(
     archived: false,
   };
 }
+
+/** 既存タスクを複製。構造・担当・期日は引き継ぎ、進捗系はリセットする */
+export function duplicateTask(source: Task): Task {
+  return {
+    id: `t-${Date.now()}`,
+    categoryId: source.categoryId,
+    title: source.title,
+    status: "todo",
+    subCategory: source.subCategory,
+    assignee: source.assignee,
+    startDate: source.startDate,
+    dueDate: source.dueDate,
+    statusDetail: "",
+    issue: undefined,
+    nextAction: "",
+    priority: false,
+    notes: [],
+    archived: false,
+  };
+}

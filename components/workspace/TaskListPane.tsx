@@ -6,7 +6,9 @@ import {
   Archive,
   ArchiveRestore,
   ChevronDown,
+  Copy,
   Filter,
+  MoreHorizontal,
   Plus,
   Star,
 } from "lucide-react";
@@ -46,7 +48,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddItemDialog } from "@/components/workspace/AddItemDialog";
 import { AddTaskDialog } from "@/components/workspace/AddTaskDialog";
@@ -76,6 +84,7 @@ type TaskListPaneProps = {
   onAddTask: (title: string, subCategory?: string) => void;
   /** subCategory の候補一覧（datalist 用） */
   subCategoryOptions: string[];
+  onCopyTask: (id: string) => void;
   onArchiveTask: (id: string) => void;
   onRestoreTask: (id: string) => void;
   onMoveTask: (id: string, toStatus: TaskStatus, toIndex: number) => void;
@@ -91,6 +100,7 @@ export function TaskListPane({
   onAddTaskByStatus,
   onAddTask,
   subCategoryOptions,
+  onCopyTask,
   onArchiveTask,
   onRestoreTask,
   onMoveTask,
@@ -251,6 +261,7 @@ export function TaskListPane({
                   onAddRequest={() =>
                     setAddByStatusDialog({ status: group.status, label: group.label })
                   }
+                  onCopyRequest={onCopyTask}
                   onArchiveRequest={(id, title) => setArchiveTarget({ id, title })}
                 />
               ))}
@@ -290,6 +301,7 @@ export function TaskListPane({
                 selectedTaskId={selectedTaskId}
                 onSelectTask={onSelectTask}
                 onAddRequest={() => setAddTaskDialog({ subCategory: group.label === "（未分類）" ? undefined : group.label })}
+                onCopyRequest={onCopyTask}
                 onArchiveRequest={(id, title) => setArchiveTarget({ id, title })}
               />
             ))}
@@ -323,6 +335,7 @@ export function TaskListPane({
                 stats={group.stats}
                 selectedTaskId={selectedTaskId}
                 onSelectTask={onSelectTask}
+                onCopyRequest={onCopyTask}
                 onArchiveRequest={(id, title) => setArchiveTarget({ id, title })}
               />
             ))}
@@ -391,6 +404,7 @@ function StatusGroup({
   selectedTaskId,
   onSelectTask,
   onAddRequest,
+  onCopyRequest,
   onArchiveRequest,
 }: {
   status: TaskStatus;
@@ -399,6 +413,7 @@ function StatusGroup({
   selectedTaskId: string;
   onSelectTask: (id: string) => void;
   onAddRequest: () => void;
+  onCopyRequest: (id: string) => void;
   onArchiveRequest: (id: string, title: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -458,13 +473,19 @@ function StatusGroup({
                 selected={t.id === selectedTaskId}
                 onSelect={onSelectTask}
                 actions={
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onSelect={() => onArchiveRequest(t.id, t.title)}
-                  >
-                    <Archive />
-                    アーカイブ
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={() => onCopyRequest(t.id)}>
+                      <Copy />
+                      コピー
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => onArchiveRequest(t.id, t.title)}
+                    >
+                      <Archive />
+                      アーカイブ
+                    </DropdownMenuItem>
+                  </>
                 }
               />
             ))
@@ -486,6 +507,7 @@ function SubCategoryGroup({
   selectedTaskId,
   onSelectTask,
   onAddRequest,
+  onCopyRequest,
   onArchiveRequest,
 }: {
   label: string;
@@ -494,6 +516,7 @@ function SubCategoryGroup({
   selectedTaskId: string;
   onSelectTask: (id: string) => void;
   onAddRequest: () => void;
+  onCopyRequest: (id: string) => void;
   onArchiveRequest: (id: string, title: string) => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -568,6 +591,7 @@ function SubCategoryGroup({
                 task={t}
                 selected={t.id === selectedTaskId}
                 onSelect={onSelectTask}
+                onCopyRequest={onCopyRequest}
                 onArchiveRequest={onArchiveRequest}
                 showSubCategory={false}
               />
@@ -589,6 +613,7 @@ function GoalCategoryGroup({
   stats,
   selectedTaskId,
   onSelectTask,
+  onCopyRequest,
   onArchiveRequest,
 }: {
   label: string;
@@ -596,6 +621,7 @@ function GoalCategoryGroup({
   stats: StatusStats;
   selectedTaskId: string;
   onSelectTask: (id: string) => void;
+  onCopyRequest: (id: string) => void;
   onArchiveRequest: (id: string, title: string) => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -658,6 +684,7 @@ function GoalCategoryGroup({
                 task={t}
                 selected={t.id === selectedTaskId}
                 onSelect={onSelectTask}
+                onCopyRequest={onCopyRequest}
                 onArchiveRequest={onArchiveRequest}
                 showSubCategory
               />
@@ -684,24 +711,26 @@ function TaskItemRow({
   task,
   selected,
   onSelect,
+  onCopyRequest,
   onArchiveRequest,
   showSubCategory,
 }: {
   task: TaskRow;
   selected: boolean;
   onSelect: (id: string) => void;
+  onCopyRequest: (id: string) => void;
   onArchiveRequest: (id: string, title: string) => void;
   showSubCategory: boolean;
 }) {
   const dueDays = daysUntil(task.dueDate);
 
   return (
-    <li className="group/task relative">
+    <li className="group/task relative flex items-stretch">
       <button
         type="button"
         onClick={() => onSelect(task.id)}
         className={cn(
-          "flex w-full items-start gap-0 text-left transition-colors",
+          "flex min-w-0 flex-1 items-start gap-0 text-left transition-colors",
           "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
           selected
             ? "bg-[linear-gradient(135deg,#111125,#1a1a38)]"
@@ -772,19 +801,40 @@ function TaskItemRow({
           </div>
         </div>
       </button>
-      {/* アーカイブボタン */}
-      <button
-        type="button"
-        onClick={() => onArchiveRequest(task.id, task.title)}
-        className={cn(
-          "absolute top-1 right-1 rounded p-0.5",
-          "opacity-0 group-focus-within/task:opacity-100 group-hover/task:opacity-100",
-          "transition-opacity text-muted-foreground hover:text-foreground",
-        )}
-        aria-label={`${task.title} をアーカイブ`}
-      >
-        <Archive className="size-3.5" />
-      </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              className={cn(
+                "my-1 mr-1 shrink-0 self-center",
+                "text-muted-foreground hover:text-foreground",
+                selected && "text-[#a09880] hover:text-[#e8d9a8]",
+              )}
+              aria-label={`${task.title} の操作`}
+            >
+              <MoreHorizontal />
+            </Button>
+          }
+        />
+        <DropdownMenuContent side="right" align="start">
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => onCopyRequest(task.id)}>
+              <Copy />
+              コピー
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => onArchiveRequest(task.id, task.title)}
+            >
+              <Archive />
+              アーカイブ
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </li>
   );
 }

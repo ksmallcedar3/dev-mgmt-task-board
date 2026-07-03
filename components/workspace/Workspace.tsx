@@ -24,7 +24,7 @@ import {
   type StatusStats,
   TASK_STATUS_ORDER,
 } from "@/lib/schema";
-import { createMinimalTask } from "@/lib/data/factories";
+import { createMinimalTask, duplicateTask } from "@/lib/data/factories";
 import { ARCHIVED_GROUP_LABEL, TASK_STATUS_LABELS } from "@/lib/labels";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { GlobalHeader } from "@/components/workspace/GlobalHeader";
@@ -282,8 +282,6 @@ export function Workspace({
     [trackSave],
   );
 
-  const STATUS_PRIORITY: Record<TaskStatus, number> = { in_progress: 0, todo: 1, blocked: 2, done: 3 };
-
   const toStats = (ts: Task[]): StatusStats => ({
     todo: ts.filter((t) => t.status === "todo").length,
     in_progress: ts.filter((t) => t.status === "in_progress").length,
@@ -304,6 +302,10 @@ export function Workspace({
   });
 
   const taskGroups: TaskGroup[] = useMemo(() => {
+    const taskIndex = new Map(tasks.map((t, i) => [t.id, i]));
+    const sortByListOrder = (ts: Task[]) =>
+      [...ts].sort((a, b) => (taskIndex.get(a.id) ?? 0) - (taskIndex.get(b.id) ?? 0));
+
     const archivedItems =
       viewMode === "goal"
         ? tasks
@@ -321,7 +323,7 @@ export function Workspace({
         kind: "status" as const,
         status,
         label: TASK_STATUS_LABELS[status],
-        items: activeTasks.filter((t) => t.status === status).map(toRow),
+        items: sortByListOrder(activeTasks.filter((t) => t.status === status)).map(toRow),
       }));
       return [...stageGroups, ...archivedGroup];
     }
@@ -341,12 +343,10 @@ export function Workspace({
       }
       const groups: TaskGroup[] = [];
       for (const [label, ts] of catMap) {
-        const sorted = [...ts].sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
-        groups.push({ kind: "subCategory" as const, label, items: sorted.map(toRow), stats: toStats(ts) });
+        groups.push({ kind: "subCategory" as const, label, items: sortByListOrder(ts).map(toRow), stats: toStats(ts) });
       }
       if (uncategorized.length > 0) {
-        const sorted = [...uncategorized].sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
-        groups.push({ kind: "subCategory" as const, label: "（未分類）", items: sorted.map(toRow), stats: toStats(uncategorized) });
+        groups.push({ kind: "subCategory" as const, label: "（未分類）", items: sortByListOrder(uncategorized).map(toRow), stats: toStats(uncategorized) });
       }
       return [...groups, ...archivedGroup];
     }
@@ -361,12 +361,11 @@ export function Workspace({
     for (const [categoryId, ts] of catMap) {
       const meta = findPositionMeta(departmentsWithCounts, categoryId);
       const label = meta?.positionTitle ?? categoryId;
-      const sorted = [...ts].sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status]);
       groups.push({
         kind: "goalCategory" as const,
         categoryId,
         label,
-        items: sorted.map(toRow),
+        items: sortByListOrder(ts).map(toRow),
         stats: toStats(ts),
       });
     }
@@ -412,6 +411,28 @@ export function Workspace({
     }
     return [...set].sort();
   }, [tasks, selectedCategoryId]);
+
+  const copyTask = useCallback(
+    (id: string) => {
+      const source = tasks.find((t) => t.id === id);
+      if (!source) return;
+      const newTask = duplicateTask(source);
+      setTasks((prev) => {
+        const sourceIndex = prev.findIndex((t) => t.id === id);
+        if (sourceIndex < 0) return [...prev, newTask];
+        return [
+          ...prev.slice(0, sourceIndex + 1),
+          newTask,
+          ...prev.slice(sourceIndex + 1),
+        ];
+      });
+      setSelectedTaskId(newTask.id);
+      setPane4ManuallyClosed(false);
+      saveSelectedTaskCookie(newTask.id);
+      void trackSave(apiCreate(newTask));
+    },
+    [tasks, trackSave],
+  );
 
   const archiveTask = useCallback((id: string) => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, archived: true } : t)));
@@ -580,6 +601,7 @@ export function Workspace({
                 onAddTaskByStatus={addTaskByStatus}
                 onAddTask={addTask}
                 subCategoryOptions={subCategoryOptions}
+                onCopyTask={copyTask}
                 onArchiveTask={archiveTask}
                 onRestoreTask={restoreTask}
                 onMoveTask={moveTask}

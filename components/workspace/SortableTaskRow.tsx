@@ -59,7 +59,7 @@ export function SortableTaskRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group/task relative",
+        "group/task relative flex items-stretch",
         isDragging && "pointer-events-none opacity-50",
       )}
     >
@@ -68,7 +68,7 @@ export function SortableTaskRow({
         onClick={() => onSelect(task.id)}
         style={selected ? { background: "linear-gradient(135deg, #111125, #1a1a38)", borderColor: "rgba(201,168,76,0.35)" } : undefined}
         className={cn(
-          "flex w-full items-center gap-2 rounded-md border border-transparent px-2.5 py-2.5 text-left transition-colors",
+          "flex min-w-0 flex-1 items-center gap-2 rounded-md border border-transparent px-2.5 py-2.5 text-left transition-colors",
           "outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
           selected
             ? "text-[#e8d9a8]"
@@ -142,10 +142,9 @@ export function SortableTaskRow({
               variant="ghost"
               size="icon-xs"
               className={cn(
-                "absolute top-1/2 right-1 -translate-y-1/2",
-                "opacity-0 group-focus-within/task:opacity-100 group-hover/task:opacity-100",
-                "transition-opacity",
+                "my-1 mr-1 shrink-0 self-center",
                 "text-muted-foreground hover:text-foreground",
+                selected && "text-[#a09880] hover:text-[#e8d9a8]",
               )}
               aria-label={`${task.title} の操作`}
             >
